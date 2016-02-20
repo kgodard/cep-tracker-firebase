@@ -1,0 +1,17 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    firebase (0.2.6)
+      httpclient
+      json
+    httpclient (2.7.1)
+    json (1.7.4)
+    rake (10.5.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  firebase
+  json (= 1.7.4)
+  rake
