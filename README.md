@@ -5,4 +5,5 @@
 * `cp my_settings.yml.example my_settings.yml`
 * Add your name to the `my_settings.yml`
 * `chmod +x ctf.rb`
-* `./ctf.rb -h` for options
+* `bundle exec rake ctf_symlink`
+* `ctf -h` for options
