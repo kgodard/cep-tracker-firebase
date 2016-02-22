@@ -5,4 +5,4 @@
 * `cp my_settings.yml.example my_settings.yml`
 * Add your name to the `my_settings.yml`
 * `chmod +x ctf.rb`
-* `chmod -h` for options
+* `./ctf.rb -h` for options
