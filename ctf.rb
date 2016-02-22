@@ -3,6 +3,7 @@
 require 'optparse'
 require 'firebase'
 require 'json'
+require 'yaml'
 
 class ScriptOptions
   attr_accessor :tracker_id, :event, :reason, :extended_reason, :timestamp
@@ -26,11 +27,14 @@ class CepTracker
 
   REASONS = %w[ cep hardware firmware devops it bad_ac qa priority_change other ].map(&:upcase)
 
-  attr_reader :firebase, :options, :parser
+  LOCAL_SETTINGS_FILE = 'my_settings.yml'
+
+  attr_reader :firebase, :options, :parser, :local_settings
 
   def initialize(args)
     @options = ScriptOptions.new
     @firebase = Firebase::Client.new(FIREBASE_URI)
+    @local_settings = load_local_settings
     option_parser.parse!(args)
     get_inputs
     perform_firebase_action
@@ -55,7 +59,7 @@ class CepTracker
         options.reason = reason
       end
 
-      parser.on("-d", "--timestamp TIMESTAMP", "specify timestamp to user for event, ex: 2016-04-12 14:01:00") do |timestamp|
+      parser.on("-d", "--timestamp TIMESTAMP", "specify timestamp (other than now) to use for event, ex: '2016-04-12 14:01:00'") do |timestamp|
         options.timestamp = timestamp
       end
 
@@ -133,6 +137,7 @@ class CepTracker
       response = firebase.push( 'events',
         {
           tracker_id:      options.tracker_id,
+          dev_name:        dev_name,
           event:           options.event,
           reason:          options.reason,
           extended_reason: options.extended_reason,
@@ -141,11 +146,13 @@ class CepTracker
       )
 
       if response.success?
+        event_key = JSON.parse(response.raw_body)['name']
+        new_event = retrieve_event(event_key)
 
         puts
         puts "[#{options.event}] event registered for story ##{options.tracker_id} !"
         puts
-        puts JSON.parse response.raw_body
+        puts new_event
         puts
 
       else
@@ -156,12 +163,52 @@ class CepTracker
     end
   end
 
+  def retrieve_event(event_key)
+    response = firebase.get("events/#{event_key}")
+    if response.success?
+      JSON.parse response.raw_body
+    else
+      "Error: unable to retrieve event."
+    end
+  rescue
+    "Error: unable to retrieve event."
+  end
+
+  def dev_name
+    local_settings['dev_name']
+  end
+
   def parsed_timestamp
     if options.timestamp
-      Time.parse(options.timestamp).to_i
+      while !confirm_parsed_time?
+        obtain_new_time_from_user
+      end
+      parsed_time.to_i
     else
       Time.now.to_i
     end
+  end
+
+  def parsed_time
+    Time.local(*options.timestamp.split(/\D/))
+  end
+
+  def confirm_parsed_time?
+    puts "Is this the time you want (y/n)? #{parsed_time}"
+    puts
+    answer = gets.chomp
+    answer == 'y'
+  end
+
+  def obtain_new_time_from_user
+    puts "Please re-enter time like yyyy-mm-dd hh:mm:ss:"
+    puts
+    options.timestamp = gets.chomp
+  end
+
+  def load_local_settings
+    raise "you need a '#{LOCAL_SETTINGS_FILE}' !" unless File.exists?(LOCAL_SETTINGS_FILE)
+    YAML.load_file LOCAL_SETTINGS_FILE
   end
 end
 
