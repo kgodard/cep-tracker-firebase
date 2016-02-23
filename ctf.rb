@@ -6,10 +6,11 @@ require 'json'
 require 'yaml'
 
 class ScriptOptions
-  attr_accessor :tracker_id, :event, :reason, :extended_reason, :timestamp
+  attr_accessor :tracker_id, :points, :event, :reason, :extended_reason, :timestamp
 
   def initialize
     self.tracker_id = nil
+    self.points = nil
     self.event = nil
     self.reason = nil
     self.extended_reason = nil
@@ -25,7 +26,7 @@ class CepTracker
   REASON_EVENTS = %w[ stop reject block pause ]
   EVENTS = NON_REASON_EVENTS + REASON_EVENTS
 
-  REASONS = %w[ cep hardware firmware devops it bad_ac qa priority_change other ].map(&:upcase)
+  REASONS = %w[ bug cep hardware firmware devops it bad_ac qa priority_change other ].map(&:upcase)
 
   LOCAL_SETTINGS_FILE = 'my_settings.yml'
 
@@ -49,6 +50,10 @@ class CepTracker
       # additional options
       parser.on("-t", "--tracker TRACKERID", "specify pivotal tracker story id") do |tracker_id|
         options.tracker_id = tracker_id
+      end
+
+      parser.on("-p", "--points POINTS", "specify pivotal tracker story points") do |points|
+        options.points = points
       end
 
       parser.on("-e", "--event EVENT", "specify event, ex: 'start'") do |event|
@@ -102,6 +107,15 @@ class CepTracker
       end
     end
 
+    while options.event == 'start' && options.points.nil?
+      puts "How many points?"
+      puts
+      points = gets.chomp
+      if valid_integer?(points)
+        options.points = points
+      end
+    end
+
     if REASON_EVENTS.include? options.event
       puts "Event requires a reason."
       puts
@@ -137,6 +151,7 @@ class CepTracker
       response = firebase.push( 'events',
         {
           tracker_id:      options.tracker_id,
+          points:          options.points,
           dev_name:        dev_name,
           event:           options.event,
           reason:          options.reason,
