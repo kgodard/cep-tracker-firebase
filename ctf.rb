@@ -60,7 +60,7 @@ class CepTracker
         options.event = event
       end
 
-      parser.on("-r", "--reason REASON", "specify reason, ex: cep") do |reason|
+      parser.on("-r", "--reason REASON", "specify reason, ex: BUG") do |reason|
         options.reason = reason
       end
 
