@@ -1,3 +1,4 @@
 ---
 # identify yourself
 dev_name: Your Name
+firebase_secret: seekrit

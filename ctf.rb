@@ -32,9 +32,9 @@ class CepTracker
   attr_reader :firebase, :options, :parser, :local_settings
 
   def initialize(args)
-    @options = ScriptOptions.new
-    @firebase = Firebase::Client.new(FIREBASE_URI)
+    @options        = ScriptOptions.new
     @local_settings = load_local_settings
+    @firebase       = Firebase::Client.new(FIREBASE_URI, firebase_secret)
     option_parser.parse!(args)
     get_inputs
     perform_firebase_action
@@ -156,7 +156,8 @@ class CepTracker
         puts
 
       else
-        puts "ERROR occurred while attmpting to save!"
+        error_msg = JSON.parse(response.raw_body)['error']
+        puts "ERROR occurred while attmpting to save: #{error_msg}"
       end
     else
       puts "No action: missing required options!"
@@ -172,6 +173,10 @@ class CepTracker
     end
   rescue
     "Error: unable to retrieve event."
+  end
+
+  def firebase_secret
+    local_settings['firebase_secret']
   end
 
   def dev_name
