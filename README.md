@@ -1,6 +1,8 @@
 # cep-tracker-firebase
 
 ## Installation
+* `git clone git@github.comverge.com:kgodard/cep-tracker-firebase.git`
+* `cd cep-tracker-firebase`
 * `bundle install`
 * `cp my_settings.yml.example my_settings.yml`
 * Add your name to the `my_settings.yml`
