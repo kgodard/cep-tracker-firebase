@@ -9,11 +9,9 @@
 * Add the `firebase_secret` to the `my_settings.yml`
 * `chmod +x ctf.rb`
 * `bundle exec rake ctf_setup`
-* `ctf -h` for options
 
 ## Usage
-Type `ctf`. You will be prompted for the tracker story Id, the type of
-event you wish to save, and a 'reason' (if needed).
+Easy-style: Type `ctf`. Follow the prompts.
 
 If you want to specify some or all of these options rather than being
 prompted, you can. Run `ctf -h` for details.
