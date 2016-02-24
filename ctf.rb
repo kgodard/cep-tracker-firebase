@@ -85,9 +85,10 @@ class CepTracker
     options.reason = nil unless REASONS.include?(options.reason)
 
     while options.tracker_id.nil?
-      puts "Please enter pivotal tracker id (no #):"
+      puts "Please enter pivotal tracker id:"
       puts
       tracker_id = gets.chomp
+      tracker_id[0] = '' if tracker_id[0] == '#'
       if valid_integer?(tracker_id)
         options.tracker_id = tracker_id
       end
