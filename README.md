@@ -6,7 +6,7 @@
 * Add your name to the `my_settings.yml`
 * Add the `firebase_secret` to the `my_settings.yml`
 * `chmod +x ctf.rb`
-* `bundle exec rake ctf_symlink`
+* `bundle exec rake ctf_setup`
 * `ctf -h` for options
 
 ## Usage

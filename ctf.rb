@@ -4,6 +4,7 @@ require 'optparse'
 require 'firebase'
 require 'json'
 require 'yaml'
+require 'byebug'
 
 class ScriptOptions
   attr_accessor :tracker_id, :points, :event, :reason, :extended_reason, :timestamp
@@ -228,8 +229,11 @@ class CepTracker
   end
 
   def load_local_settings
-    raise "you need a '#{LOCAL_SETTINGS_FILE}' !" unless File.exists?(LOCAL_SETTINGS_FILE)
-    YAML.load_file LOCAL_SETTINGS_FILE
+    raise "you need to run rake ctf_setup" if `echo $CTF_DIR`.chomp.empty?
+    ctf_dir = `echo $CTF_DIR`.chomp
+    local_settings_file = "#{ctf_dir}/#{LOCAL_SETTINGS_FILE}"
+    raise "you need a '#{local_settings_file}' !" unless File.exists?(local_settings_file)
+    YAML.load_file local_settings_file
   end
 end
 
