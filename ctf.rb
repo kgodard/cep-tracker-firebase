@@ -7,7 +7,7 @@ require 'yaml'
 require 'byebug'
 
 class ScriptOptions
-  attr_accessor :tracker_id, :points, :event, :reason, :extended_reason, :timestamp
+  attr_accessor :tracker_id, :points, :event, :reason, :extended_reason, :timestamp, :last
 
   def initialize
     self.tracker_id = nil
@@ -16,6 +16,7 @@ class ScriptOptions
     self.reason = nil
     self.extended_reason = nil
     self.timestamp = nil
+    self.last = nil
   end
 end
 
@@ -69,6 +70,10 @@ class CepTracker
         options.timestamp = timestamp
       end
 
+      parser.on("-z", "--last NUMBER", "specify a number of events (counting backwards in time) to display, ex: 20") do |last|
+        options.last = last
+      end
+
       parser.separator ""
       parser.separator "Common options:"
 
@@ -85,7 +90,16 @@ class CepTracker
     options.event = nil unless EVENTS.include?(options.event)
     options.reason = nil unless REASONS.include?(options.reason)
 
-    while options.tracker_id.nil?
+    while !options.last.nil? and !valid_integer?(options.last)
+      puts "Please supply a valid integer for record retrieval:"
+      puts
+      last = gets.chomp
+      if valid_integer?(last)
+        options.last = last
+      end
+    end
+
+    while options.tracker_id.nil? && options.last.nil?
       puts "Please enter pivotal tracker id:"
       puts
       tracker_id = gets.chomp
@@ -95,7 +109,7 @@ class CepTracker
       end
     end
 
-    while options.event.nil?
+    while options.event.nil? && options.last.nil?
       puts "Event type required."
       puts
       EVENTS.each_with_index do |e, i|
@@ -148,7 +162,30 @@ class CepTracker
     !!result
   end
 
+  def perform_last
+    path = "#{FIREBASE_URI}/events.json?auth=#{firebase_secret}&orderBy=\"created_at\"&limitToLast=#{options.last}".to_json
+    events = JSON.parse `curl #{path}`
+    sorted_events = events.values.sort_by {|e| e['created_at']}
+    puts
+    puts "Here are the last #{options.last} events:"
+    puts
+    sorted_events.each do |e|
+      puts [
+        Time.at(e['created_at']).strftime("%a %b %e, %R"),
+        e['event'].ljust(8),
+        e['tracker_id'].ljust(11),
+        e['dev_name']
+      ].join(pipe)
+    end
+    puts
+  end
+
+  def pipe
+    ' | '
+  end
+
   def perform_firebase_action
+
     if options.tracker_id && options.event
       response = firebase.push( 'events',
         {
@@ -176,6 +213,8 @@ class CepTracker
         error_msg = JSON.parse(response.raw_body)['error']
         puts "ERROR occurred while attmpting to save: #{error_msg}"
       end
+    elsif !options.last.nil?
+      perform_last
     else
       puts "No action: missing required options!"
     end
