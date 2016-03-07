@@ -173,7 +173,7 @@ class CepTracker
       puts [
         Time.at(e['created_at']).strftime("%a %b %e, %R"),
         e['event'].ljust(8),
-        '#' + e['tracker_id'].ljust(11),
+        '#' + e['tracker_id'].to_s.ljust(11),
         e['dev_name']
       ].join(pipe)
     end
