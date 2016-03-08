@@ -132,7 +132,7 @@ class CepTracker
       end
     end
 
-    if REASON_EVENTS.include? options.event
+    if requires_a_reason && options.reason.nil?
       puts "Event requires a reason."
       puts
       while options.reason.nil?
@@ -149,12 +149,15 @@ class CepTracker
       end
     end
 
-    if options.reason == 'OTHER' && options.extended_reason.nil?
+    if requires_a_reason && options.extended_reason.nil?
       puts "Would you like to elaborate?"
       puts
       options.extended_reason = gets.chomp
     end
+  end
 
+  def requires_a_reason
+    REASON_EVENTS.include? options.event
   end
 
   def valid_integer?(val)
