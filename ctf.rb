@@ -7,7 +7,7 @@ require 'yaml'
 require 'byebug'
 
 class ScriptOptions
-  attr_accessor :tracker_id, :points, :event, :reason, :extended_reason, :timestamp, :last
+  attr_accessor :tracker_id, :points, :event, :reason, :extended_reason, :timestamp, :last, :since, :sprint_end
 
   def initialize
     self.tracker_id = nil
@@ -17,6 +17,8 @@ class ScriptOptions
     self.extended_reason = nil
     self.timestamp = nil
     self.last = nil
+    self.since = nil
+    self.sprint_end = nil
   end
 end
 
@@ -70,6 +72,14 @@ class CepTracker
         options.timestamp = timestamp
       end
 
+      parser.on("-s", "--since DATE", "specify a date to use as a start date to retrieve events from, ex: '2016-04-12'") do |since|
+        options.since = since
+      end
+
+      parser.on("-k", "--sprint_end DATE", "specify a date to use as a sprint_end date to report on a (2-week) sprint, ex: '2016-04-12'") do |sprint_end|
+        options.sprint_end = sprint_end
+      end
+
       parser.on("-z", "--last NUMBER", "specify a number of events (counting backwards in time) to display, ex: 20") do |last|
         options.last = last
       end
@@ -99,7 +109,7 @@ class CepTracker
       end
     end
 
-    while options.tracker_id.nil? && options.last.nil?
+    while options.tracker_id.nil? && options.last.nil? && options.since.nil? && options.sprint_end.nil?
       puts "Please enter pivotal tracker id:"
       puts
       tracker_id = gets.chomp
@@ -109,7 +119,7 @@ class CepTracker
       end
     end
 
-    while options.event.nil? && options.last.nil?
+    while options.event.nil? && options.last.nil? && options.since.nil? && options.sprint_end.nil?
       puts "Event type required."
       puts
       EVENTS.each_with_index do |e, i|
@@ -165,26 +175,35 @@ class CepTracker
     !!result
   end
 
-  def perform_last
-    path = "#{FIREBASE_URI}/events.json?auth=#{firebase_secret}&orderBy=\"created_at\"&limitToLast=#{options.last}".to_json
-    events = JSON.parse `curl #{path}`
-    sorted_events = events.values.sort_by {|e| e['created_at']}
-    puts
-    puts "Here are the last #{options.last} events:"
-    puts
-    sorted_events.each do |e|
-      puts [
-        Time.at(e['created_at']).strftime("%a %b %e, %R"),
-        e['event'].ljust(8),
-        '#' + e['tracker_id'].to_s.ljust(11),
-        e['dev_name']
-      ].join(pipe)
-    end
-    puts
+  def perform_sprint_end
+    title = "Here are the events for sprint ending #{options.sprint_end}:"
+    start_time = parsed_time(options.sprint_end).to_i - sprint_length
+    end_time = parsed_time(options.sprint_end).to_i
+    params = {
+      orderBy: '"created_at"',
+      startAt: start_time,
+      endAt: end_time
+    }
+    report_on(title, params)
   end
 
-  def pipe
-    ' | '
+  def perform_since
+    title = "Here are the events since #{options.since}:"
+    start_time = parsed_time(options.since).to_i
+    params = {
+      orderBy: '"created_at"',
+      startAt: start_time
+    }
+    report_on(title, params)
+  end
+
+  def perform_last
+    title = "Here are the last #{options.last} events:"
+    params = {
+      orderBy: '"created_at"',
+      limitToLast: options.last
+    }
+    report_on(title, params)
   end
 
   def perform_firebase_action
@@ -218,6 +237,10 @@ class CepTracker
       end
     elsif !options.last.nil?
       perform_last
+    elsif !options.since.nil?
+      perform_since
+    elsif !options.sprint_end.nil?
+      perform_sprint_end
     else
       puts "No action: missing required options!"
     end
@@ -232,10 +255,6 @@ class CepTracker
     end
   rescue
     "Error: unable to retrieve event."
-  end
-
-  def firebase_secret
-    local_settings['firebase_secret']
   end
 
   def dev_name
@@ -253,8 +272,8 @@ class CepTracker
     end
   end
 
-  def parsed_time
-    Time.local(*options.timestamp.split(/\D/))
+  def parsed_time(str = options.timestamp)
+    Time.local(*str.split(/\D/))
   end
 
   def confirm_parsed_time?
@@ -276,6 +295,62 @@ class CepTracker
     local_settings_file = "#{ctf_dir}/#{LOCAL_SETTINGS_FILE}"
     raise "you need a '#{local_settings_file}' !" unless File.exists?(local_settings_file)
     YAML.load_file local_settings_file
+  end
+
+private
+
+  def report_on(title, params)
+    path = rest_request(params)
+    events = fetch_events(path)
+    puts
+    puts title
+    puts
+    display_formatted(events)
+    puts
+  end
+
+  def display_formatted(events)
+    events.each do |e|
+      puts [
+        Time.at(e['created_at']).strftime("%a %b %e, %R"),
+        e['event'].ljust(8),
+        '#' + e['tracker_id'].to_s.ljust(11),
+        e['dev_name']
+      ].join(pipe)
+    end
+  end
+
+  def fetch_events(path)
+    events = JSON.parse `curl #{path}`
+    events.values.sort_by {|e| e['created_at']}
+  end
+
+  def rest_request(params)
+    base = url_with_auth
+    params.each do |k,v|
+      base += "&#{k}=#{v}"
+    end
+    base.to_json
+  end
+
+  def url_with_auth
+    "#{FIREBASE_URI}/events.json?auth=#{firebase_secret}"
+  end
+
+  def firebase_secret
+    local_settings['firebase_secret']
+  end
+
+  def pipe
+    ' | '
+  end
+
+  def sprint_length
+    14 * one_day
+  end
+
+  def one_day
+    24 * 60 * 60
   end
 end
 
