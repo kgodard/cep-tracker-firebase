@@ -6,19 +6,127 @@ require 'json'
 require 'yaml'
 require 'byebug'
 
+# contains all finished pivotal_stories for a given sprint
+class PivotalSprint
+  attr_reader :pivotal_stories, :reject_event_count
+
+  def initialize(pivotal_stories: [], reject_event_count: 0)
+    @pivotal_stories = pivotal_stories
+    @reject_event_count = reject_event_count
+  end
+
+  def average_cycle_days
+    (average_cycle_hours / 24).round(2)
+  end
+
+  def average_cycle_hours
+    (story_cycle_hours_sum / story_count).round(2)
+  end
+
+  def finished_points
+    pivotal_stories.inject(0) do |sum, story|
+      sum += story.points
+    end
+  end
+
+  def rejection_percent
+    return 0 if reject_event_count == 0
+    ((reject_event_count.to_f / story_count) * 100).round(2)
+  end
+
+private
+
+  def story_cycle_hours_sum
+    story_cycle_hours_array.inject(0) {|sum, i| sum += i}.to_f
+  end
+
+  def story_count
+    pivotal_stories.size
+  end
+
+  def story_cycle_hours_array
+    pivotal_stories.map(&:cycle_hours)
+  end
+end
+
+# contains all events for a given story
+class PivotalStory
+  attr_reader :events, :developer, :sprint_start_seconds
+
+  def initialize(events: [], developer: nil, sprint_start_seconds: nil)
+    @events, @developer = events, developer
+    @sprint_start_seconds = sprint_start_seconds
+  end
+
+  def cycle_hours
+    cycle_seconds / 3600.0
+  end
+
+  def contains_reject?
+    events.any? {|e| e['event'] == 'reject' && e['dev_name'] == developer}
+  end
+
+  def points
+    start_event['points'].to_i rescue 0
+  end
+
+private
+
+  def cycle_seconds
+    start_to_finish_seconds - blocked_seconds
+  end
+
+  def start_event
+    detect_event('start')
+  end
+
+  def finish_event
+    detect_event('finish')
+  end
+
+  def detect_event(event_name)
+    events.detect {|e| e['event'] == event_name && e['dev_name'] == developer}
+  end
+
+  def blocked_seconds
+    return 0 unless detect_event('block')
+    seconds = 0
+    block_seconds = 0
+    events.each do |event|
+      if event['event'] == 'block'
+        block_seconds = event['created_at']
+      elsif event['event'] == 'resume'
+        seconds += event['created_at'] - block_seconds
+      end
+    end
+    seconds
+  end
+
+  def start_to_finish_seconds
+    if start_event.nil?
+      finish_event['created_at'] - sprint_start_seconds
+    else
+      finish_event['created_at'] - start_event['created_at']
+    end
+  end
+end
+
 class ScriptOptions
-  attr_accessor :tracker_id, :points, :event, :reason, :extended_reason, :timestamp, :last, :since, :sprint_end
+  attr_accessor :tracker_id, :points, :event, :reason,
+    :extended_reason, :timestamp, :last, :since, :sprint_end,
+    :search_id
 
   def initialize
-    self.tracker_id = nil
-    self.points = nil
-    self.event = nil
-    self.reason = nil
-    self.extended_reason = nil
-    self.timestamp = nil
-    self.last = nil
-    self.since = nil
-    self.sprint_end = nil
+    @tracker_id      = nil
+    @search_id       = nil
+    @points          = nil
+    @event           = nil
+    @reason          = nil
+    @extended_reason = nil
+    @timestamp       = nil
+    @last            = nil
+    @since           = nil
+    @sprint_end      = nil
   end
 end
 
@@ -76,6 +184,10 @@ class CepTracker
         options.since = since
       end
 
+      parser.on("-f", "--find TRACKERID", "specify a pivotal tracker story id to search for its events") do |search_id|
+        options.search_id = search_id
+      end
+
       parser.on("-k", "--sprint_end DATE", "specify a date to use as a sprint_end date to report on a (2-week) sprint, ex: '2016-04-12'") do |sprint_end|
         options.sprint_end = sprint_end
       end
@@ -95,6 +207,10 @@ class CepTracker
     end
   end
 
+  def no_other_options?
+    options.last.nil? && options.since.nil? && options.sprint_end.nil? && options.search_id.nil?
+  end
+
   def get_inputs
 
     options.event = nil unless EVENTS.include?(options.event)
@@ -109,7 +225,7 @@ class CepTracker
       end
     end
 
-    while options.tracker_id.nil? && options.last.nil? && options.since.nil? && options.sprint_end.nil?
+    while options.tracker_id.nil? && no_other_options?
       puts "Please enter pivotal tracker id:"
       puts
       tracker_id = gets.chomp
@@ -119,7 +235,7 @@ class CepTracker
       end
     end
 
-    while options.event.nil? && options.last.nil? && options.since.nil? && options.sprint_end.nil?
+    while options.event.nil? && no_other_options?
       puts "Event type required."
       puts
       EVENTS.each_with_index do |e, i|
@@ -166,25 +282,38 @@ class CepTracker
     end
   end
 
-  def requires_a_reason
-    REASON_EVENTS.include? options.event
-  end
-
-  def valid_integer?(val)
-    result = Integer(val) rescue false
-    !!result
-  end
-
   def perform_sprint_end
-    title = "Here are the events for sprint ending #{options.sprint_end}:"
-    start_time = parsed_time(options.sprint_end).to_i - sprint_length
-    end_time = parsed_time(options.sprint_end).to_i
     params = {
       orderBy: '"created_at"',
-      startAt: start_time,
-      endAt: end_time
+      startAt: sprint_start_seconds,
+      endAt: sprint_end_seconds
     }
-    report_on(title, params)
+    path = rest_request(params)
+    events = fetch_events(path)
+
+    finished = events.select {|e| e['event'] == 'finish'}
+    uniq_finished = finished.uniq {|e| e['tracker_id'].to_s + e['dev_name'] }
+    pivotal_stories = pivotal_stories_for(finished_events: uniq_finished)
+
+    reject_event_count = events.count {|e| e['event'] == 'reject'}
+
+    sprint = PivotalSprint.new(pivotal_stories: pivotal_stories, reject_event_count: reject_event_count)
+
+    puts
+    puts "Events for sprint ending #{options.sprint_end}:"
+    puts "-------------------------------------------------------"
+    display_formatted events
+    puts
+    puts "Finished stories for sprint ending #{options.sprint_end}:"
+    puts "-------------------------------------------------------"
+    display_formatted uniq_finished
+    puts
+    puts "Sprint Metrics for sprint ending #{options.sprint_end}:"
+    puts "-------------------------------------------------------"
+    puts "Finished Points:     #{sprint.finished_points}"
+    puts "Average Cycle Hours: #{sprint.average_cycle_hours} (#{sprint.average_cycle_days} days)"
+    puts "Rejection %:         #{sprint.rejection_percent}"
+    puts
   end
 
   def perform_since
@@ -202,6 +331,17 @@ class CepTracker
     params = {
       orderBy: '"created_at"',
       limitToLast: options.last
+    }
+    report_on(title, params)
+  end
+
+  def perform_id_search
+    tracker_id = options.search_id
+    title = "Events for pivotal story id: #{tracker_id}:"
+    tracker_id[0] = '' if tracker_id[0] == '#'
+    params = {
+      orderBy: '"tracker_id"',
+      equalTo: "\"#{tracker_id}\""
     }
     report_on(title, params)
   end
@@ -239,6 +379,8 @@ class CepTracker
       perform_last
     elsif !options.since.nil?
       perform_since
+    elsif !options.search_id.nil?
+      perform_id_search
     elsif !options.sprint_end.nil?
       perform_sprint_end
     else
@@ -298,6 +440,43 @@ class CepTracker
   end
 
 private
+
+  def requires_a_reason
+    REASON_EVENTS.include? options.event
+  end
+
+  def valid_integer?(val)
+    result = Integer(val) rescue false
+    !!result
+  end
+
+  def pivotal_stories_for(finished_events:)
+    finished_events.map do |event|
+      story_events = all_events_for(tracker_id: event['tracker_id'])
+      PivotalStory.new(
+        events: story_events,
+        developer: event['dev_name'],
+        sprint_start_seconds: sprint_start_seconds
+      )
+    end
+  end
+
+  def all_events_for(tracker_id:)
+    params = {
+      orderBy: '"tracker_id"',
+      equalTo: "\"#{tracker_id}\""
+    }
+    path = rest_request(params)
+    fetch_events(path)
+  end
+
+  def sprint_start_seconds
+    parsed_time(options.sprint_end).to_i - sprint_length
+  end
+
+  def sprint_end_seconds
+    parsed_time(options.sprint_end).to_i
+  end
 
   def report_on(title, params)
     path = rest_request(params)
