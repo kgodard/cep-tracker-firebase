@@ -6,12 +6,12 @@ require 'json'
 require 'yaml'
 require 'byebug'
 
-# contains all finished pivotal_stories for a given sprint
-class PivotalSprint
-  attr_reader :pivotal_stories, :reject_event_count
+# contains all finished stories for a given sprint
+class Sprint
+  attr_reader :stories, :reject_event_count
 
-  def initialize(pivotal_stories: [], reject_event_count: 0)
-    @pivotal_stories = pivotal_stories
+  def initialize(stories: [], reject_event_count: 0)
+    @stories = stories
     @reject_event_count = reject_event_count
   end
 
@@ -24,7 +24,7 @@ class PivotalSprint
   end
 
   def finished_points
-    pivotal_stories.inject(0) do |sum, story|
+    stories.inject(0) do |sum, story|
       sum += story.points
     end
   end
@@ -41,16 +41,16 @@ private
   end
 
   def story_count
-    pivotal_stories.size
+    stories.size
   end
 
   def story_cycle_hours_array
-    pivotal_stories.map(&:cycle_hours)
+    stories.map(&:cycle_hours)
   end
 end
 
 # contains all events for a given story
-class PivotalStory
+class Story
   attr_reader :events, :developer, :sprint_start_seconds
 
   def initialize(events: [], developer: nil, sprint_start_seconds: nil)
@@ -160,11 +160,11 @@ class CepTracker
       parser.separator "Specific options:"
 
       # additional options
-      parser.on("-t", "--tracker TRACKERID", "specify pivotal tracker story id") do |tracker_id|
+      parser.on("-t", "--tracker TRACKERID", "specify story id") do |tracker_id|
         options.tracker_id = tracker_id
       end
 
-      parser.on("-p", "--points POINTS", "specify pivotal tracker story points") do |points|
+      parser.on("-p", "--points POINTS", "specify story points") do |points|
         options.points = points
       end
 
@@ -184,7 +184,7 @@ class CepTracker
         options.since = since
       end
 
-      parser.on("-f", "--find TRACKERID", "specify a pivotal tracker story id to search for its events") do |search_id|
+      parser.on("-f", "--find TRACKERID", "specify a story id to search for its events") do |search_id|
         options.search_id = search_id
       end
 
@@ -226,7 +226,7 @@ class CepTracker
     end
 
     while options.tracker_id.nil? && no_other_options?
-      puts "Please enter pivotal tracker id:"
+      puts "Please enter story id:"
       puts
       tracker_id = gets.chomp
       tracker_id[0] = '' if tracker_id[0] == '#'
@@ -293,11 +293,11 @@ class CepTracker
 
     finished = events.select {|e| e['event'] == 'finish'}
     uniq_finished = finished.uniq {|e| e['tracker_id'].to_s + e['dev_name'] }
-    pivotal_stories = pivotal_stories_for(finished_events: uniq_finished)
+    stories = stories_for(finished_events: uniq_finished)
 
     reject_event_count = events.count {|e| e['event'] == 'reject'}
 
-    sprint = PivotalSprint.new(pivotal_stories: pivotal_stories, reject_event_count: reject_event_count)
+    sprint = Sprint.new(stories: stories, reject_event_count: reject_event_count)
 
     puts
     puts "Events for sprint ending #{options.sprint_end}:"
@@ -337,7 +337,7 @@ class CepTracker
 
   def perform_id_search
     tracker_id = options.search_id
-    title = "Events for pivotal story id: #{tracker_id}:"
+    title = "Events for story id: #{tracker_id}:"
     tracker_id[0] = '' if tracker_id[0] == '#'
     params = {
       orderBy: '"tracker_id"',
@@ -450,10 +450,10 @@ private
     !!result
   end
 
-  def pivotal_stories_for(finished_events:)
+  def stories_for(finished_events:)
     finished_events.map do |event|
       story_events = all_events_for(tracker_id: event['tracker_id'])
-      PivotalStory.new(
+      Story.new(
         events: story_events,
         developer: event['dev_name'],
         sprint_start_seconds: sprint_start_seconds
