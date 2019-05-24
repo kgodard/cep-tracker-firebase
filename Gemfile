@@ -1,6 +1,5 @@
 source "https://rubygems.org"
 
-gem 'rake'
-gem 'json', '1.7.4'
-gem 'firebase'
+gem 'json', '2.2.0'
+gem 'firebase', '0.2.8'
 gem 'byebug'
