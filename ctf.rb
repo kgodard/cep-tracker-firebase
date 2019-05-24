@@ -132,7 +132,7 @@ end
 
 class CepTracker
 
-  FIREBASE_URI = 'https://cep-tracker.firebaseIO.com'
+  FIREBASE_URI = 'https://cep-tracker-72541.firebaseio.com/'
 
   NON_REASON_EVENTS = %w[ start resume finish restart play ]
   REASON_EVENTS = %w[ stop reject block pause ]
