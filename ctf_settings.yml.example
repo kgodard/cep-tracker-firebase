@@ -1,4 +1,5 @@
 ---
 # identify yourself
 dev_name: Your Name
+firebase_uri: 'https://cep-tracker-uri.firebaseio.com/'
 firebase_secret: seekrit
