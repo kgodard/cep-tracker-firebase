@@ -132,22 +132,20 @@ end
 
 class CepTracker
 
-  FIREBASE_URI = 'https://cep-tracker-72541.firebaseio.com/'
-
   NON_REASON_EVENTS = %w[ start resume finish restart play ]
   REASON_EVENTS = %w[ stop reject block pause ]
   EVENTS = NON_REASON_EVENTS + REASON_EVENTS
 
   REASONS = %w[ bug cep hardware firmware devops it bad_ac qa priority_change other ].map(&:upcase)
 
-  LOCAL_SETTINGS_FILE = 'my_settings.yml'
+  LOCAL_SETTINGS_FILE = 'ctf_settings.yml'
 
   attr_reader :firebase, :options, :parser, :local_settings
 
   def initialize(args)
     @options        = ScriptOptions.new
     @local_settings = load_local_settings
-    @firebase       = Firebase::Client.new(FIREBASE_URI, firebase_secret)
+    @firebase       = Firebase::Client.new(firebase_uri, firebase_secret)
     option_parser.parse!(args)
     get_inputs
     perform_firebase_action
@@ -301,15 +299,15 @@ class CepTracker
 
     puts
     puts "Events for sprint ending #{options.sprint_end}:"
-    puts "-------------------------------------------------------"
+    puts report_rule
     display_formatted events
     puts
     puts "Finished stories for sprint ending #{options.sprint_end}:"
-    puts "-------------------------------------------------------"
-    display_formatted uniq_finished
+    puts report_rule
+    display_formatted uniq_finished, false
     puts
     puts "Sprint Metrics for sprint ending #{options.sprint_end}:"
-    puts "-------------------------------------------------------"
+    puts report_rule
     puts "Finished Points:     #{sprint.finished_points}"
     puts "Average Cycle Hours: #{sprint.average_cycle_hours} (#{sprint.average_cycle_days} days)"
     puts "Rejection %:         #{sprint.rejection_percent}"
@@ -432,7 +430,7 @@ class CepTracker
   end
 
   def load_local_settings
-    raise "you need to run rake ctf_setup" if `echo $CTF_DIR`.chomp.empty?
+    raise "you need to run ctf_setup" if `echo $CTF_DIR`.chomp.empty?
     ctf_dir = `echo $CTF_DIR`.chomp
     local_settings_file = "#{ctf_dir}/#{LOCAL_SETTINGS_FILE}"
     raise "you need a '#{local_settings_file}' !" unless File.exists?(local_settings_file)
@@ -488,14 +486,32 @@ private
     puts
   end
 
-  def display_formatted(events)
-    events.each do |e|
-      puts [
-        Time.at(e['created_at']).strftime("%a %b %e, %R"),
-        e['event'].ljust(8),
-        '#' + e['tracker_id'].to_s.ljust(11),
-        e['dev_name']
-      ].join(pipe)
+  def report_rule
+    "----------------------------------------------------------------------"
+  end
+
+  def display_formatted(events, with_points = true)
+    events.each do |event|
+      puts event_array(event, with_points)
+    end
+  end
+
+  def event_array(event, with_points)
+    ary = [
+      Time.at(event['created_at']).strftime("%a %b %e, %R"),
+      event['event'].ljust(8),
+      '#' + event['tracker_id'].to_s.ljust(11)
+    ]
+    ary << point_display_for(event) if with_points
+    ary << event['dev_name']
+    ary.join(pipe)
+  end
+
+  def point_display_for(event)
+    unless event['points'].nil?
+      ('points: ' + event['points']).ljust(9)
+    else
+      ''.ljust(9)
     end
   end
 
@@ -513,7 +529,11 @@ private
   end
 
   def url_with_auth
-    "#{FIREBASE_URI}/events.json?auth=#{firebase_secret}"
+    "#{firebase_uri}/events.json?auth=#{firebase_secret}"
+  end
+
+  def firebase_uri
+    local_settings['firebase_uri']
   end
 
   def firebase_secret
