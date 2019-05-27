@@ -16,7 +16,7 @@ class Story
   end
 
   def points
-    start_event['points'].to_i rescue 0
+    start_event['points'].to_f rescue 0.0
   end
 
 private

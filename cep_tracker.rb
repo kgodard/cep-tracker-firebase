@@ -119,7 +119,7 @@ class CepTracker
       puts "How many points?"
       puts
       points = gets.chomp
-      if valid_integer?(points)
+      if valid_points?(points)
         options.points = points
       end
     end
@@ -312,6 +312,10 @@ private
     REASON_EVENTS.include? options.event
   end
 
+  def valid_points?(val)
+    Float(val) != nil rescue false
+  end
+
   def valid_integer?(val)
     result = Integer(val) rescue false
     !!result
@@ -361,11 +365,11 @@ private
 
   def display_formatted(events, with_points = true)
     events.each do |event|
-      puts event_array(event, with_points)
+      puts event_line(event, with_points)
     end
   end
 
-  def event_array(event, with_points)
+  def event_line(event, with_points)
     ary = [
       Time.at(event['created_at']).strftime("%a %b %e, %R"),
       event['event'].ljust(8),
@@ -378,9 +382,9 @@ private
 
   def point_display_for(event)
     unless event['points'].nil?
-      ('points: ' + event['points']).ljust(9)
+      ('points: ' + event['points']).ljust(11)
     else
-      ''.ljust(9)
+      ''.ljust(11)
     end
   end
 

@@ -16,7 +16,7 @@ class Sprint
   end
 
   def finished_points
-    stories.inject(0) do |sum, story|
+    stories.inject(0.0) do |sum, story|
       sum += story.points
     end
   end
@@ -27,7 +27,7 @@ class Sprint
   end
 
   def average_points_per_developer
-    (finished_points * 1.0 / developer_count).round(2)
+    (finished_points / developer_count).round(2)
   end
 
 private
