@@ -351,7 +351,7 @@ private
 
   def report_on(title, params)
     path = rest_request(params)
-    events = fetch_events(path)
+    events = fetch_events(path) rescue []
     puts
     puts title
     puts
