@@ -1,5 +1,5 @@
 ---
-# identify yourself
-dev_name: Your Name
-firebase_uri: 'https://cep-tracker-uri.firebaseio.com/'
-firebase_secret: seekrit
+# see https://github.comverge.com/software/env-dev
+dev_name: Your Name Goes Here
+firebase_uri: the_ctf_firebase_uri
+firebase_secret: the_ctf_firebase_secret
