@@ -176,9 +176,10 @@ class CepTracker
     puts
     puts "Sprint Metrics for sprint ending #{options.sprint_end}:"
     puts report_rule
-    puts "Finished Points:     #{sprint.finished_points}"
-    puts "Average Cycle Hours: #{sprint.average_cycle_hours} (#{sprint.average_cycle_days} days)"
-    puts "Rejection %:         #{sprint.rejection_percent}"
+    puts "Finished Points:    #{sprint.finished_points}"
+    puts "Avg Points Per Dev: #{sprint.average_points_per_developer}"
+    puts "Avg Cycle Hours:    #{sprint.average_cycle_hours} (#{sprint.average_cycle_days} days)"
+    puts "Rejection %:        #{sprint.rejection_percent}"
     puts
   end
 

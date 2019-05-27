@@ -26,7 +26,15 @@ class Sprint
     ((reject_event_count.to_f / story_count) * 100).round(2)
   end
 
+  def average_points_per_developer
+    (finished_points * 1.0 / developer_count).round(2)
+  end
+
 private
+
+  def developer_count
+    stories.map(&:developer).uniq.count
+  end
 
   def story_cycle_hours_sum
     story_cycle_hours_array.inject(0) {|sum, i| sum += i}.to_f
