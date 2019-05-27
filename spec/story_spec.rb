@@ -13,8 +13,6 @@ describe Story do
         "points" =>      start_points,
         "dev_name" =>    developer_name,
         "event" =>       'start',
-        "reason" =>      nil,
-        "extended_reason" =>  nil,
         "created_at" =>  (Time.now - 3 * day).to_i
       },
       {
@@ -22,8 +20,6 @@ describe Story do
         "points" =>      nil,
         "dev_name" =>    developer_name,
         "event" =>       'finish',
-        "reason" =>      nil,
-        "extended_reason" =>  nil,
         "created_at" =>  (Time.now - 1 * day).to_i
       }
     ]
