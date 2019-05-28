@@ -30,12 +30,12 @@ So generally the flow is:
 So that's when we want to register the __finish__ event -- when we actually drag the story to the QA column.
 
 ### Stopping/starting events
-If your story gets ​_blocked_​ for some reason, you want to register a __block__ event. When it becomes un-blocked, register a __resume__ event.
+If your story gets _blocked_ for some reason, you want to register a __block__ event. When it becomes un-blocked, register a __resume__ event.
 
-If you need to ​_stop_​ your story for some reason (i.e. you need to put it down because another story just became a super-high priority), register a __stop__ event.
+If you need to _stop_ your story for some reason (i.e. you need to put it down because another story just became a super-high priority), register a __stop__ event.
 When you begin on it again, register a __resume__.
 
-(Stop is meant to be a generic event for when we're not ​_blocked_​, but we still have to stop working on the story for some reason.)
+(Stop is meant to be a generic event for when we're not _blocked_, but we still have to stop working on the story for some reason.)
 
 ### Reject events
 Reject events are not meant for the time between start and finish. When you've finished a story, but it gets _rejected_ by QA, you want to register a __reject__ event for it.
