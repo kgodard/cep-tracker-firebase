@@ -1,21 +1,22 @@
 #!/bin/bash
 
+export CTF_DIR=$PWD
+
 echo
 echo checking for CTF_DIR environment var...
 echo
 
-if [[ $(echo $CTF_DIR) ]]; then
-  echo ">> CTF_DIR exists."
+if [[ $(grep CTF_DIR ${HOME}/.bash_profile) ]]; then
+  echo ">> CTF_DIR is set in .bash_profile"
 else
-  echo ERROR: We need to add this line to your ~/.bash_profile:
+  echo We need to add this line to your ~/.bash_profile:
   echo
   echo "export CTF_DIR=$PWD"
   echo
-  read -n 1 -s -r -p "Press any key to continue"
+  read -n 1 -s -r -p "Press any key to add it..."
   echo "export CTF_DIR=$PWD" >> ${HOME}/.bash_profile
   echo
-  echo Env var was added to your .bash_profile.
-  export CTF_DIR=${PWD}
+  echo ">> CTF_DIR env var was added to your .bash_profile."
 fi
 
 echo
@@ -62,8 +63,11 @@ if [ -f "$CTF_DIR/ctf_settings.yml" ]; then
   cat $CTF_DIR/ctf_settings.yml
 else
   echo "ctf_settings.yml was not found. You will need to fill in required values."
+  echo "First, fill in your name."
+  echo "Next, fill in the firebase_uri and the firebase_secret."
+  echo "Those values can be found here: https://github.comverge.com/software/env-dev/tree/master/cep-tracker-firebase"
   echo
-  read -n 1 -s -r -p "Press any key to continue"
+  read -n 1 -s -r -p "Press any key to edit your ctf_settings.yml file"
   cp $CTF_DIR/ctf_settings.yml{.example,}
   $EDITOR $CTF_DIR/ctf_settings.yml
 fi
