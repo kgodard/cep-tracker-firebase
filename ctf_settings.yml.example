@@ -1,5 +1,5 @@
 ---
-# see https://github.comverge.com/software/env-dev
+# see https://github.comverge.com/software/env-dev/tree/master/cep-tracker-firebase
 dev_name: Your Name Goes Here
 firebase_uri: the_ctf_firebase_uri
 firebase_secret: the_ctf_firebase_secret
