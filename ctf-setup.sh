@@ -12,34 +12,23 @@ else
   echo "export CTF_DIR=$PWD"
   echo
   read -n 1 -s -r -p "Press any key to continue"
-  echo "export CTF_DIR=$PWD" >> ~/.bash_profile
+  echo "export CTF_DIR=$PWD" >> ${HOME}/.bash_profile
   echo
   echo Env var added. Reloading profile...
-  source ~/.bash_profile
-fi
-
-echo
-echo checking for rbenv...
-echo
-
-if [[ $(which rbenv) ]]; then
-  echo ">> rbenv is installed!"
-else
-  echo ERROR: CTF requires rbenv in order to support required ruby version
-  echo "(brew install rbenv)"
-  exit 1
+  source ${HOME}/.bash_profile
 fi
 
 echo
 echo checking for ruby 2.5.5...
 echo
 
-if [[ $(rbenv versions | grep 2.5.5) ]]; then
+cd $CTF_DIR
+
+if [[ $(ruby -v | grep 2.5.5) ]]; then
   echo ">> Ruby version 2.5.5 available."
 else
   echo ERROR: CTF requires ruby version 2.5.5.
-  echo Please use rbenv to install it and re-run this script.
-  echo "(rbenv install 2.5.5)"
+  echo Please use your preferred version manager to install it and re-run this script.
   exit 1
 fi
 
