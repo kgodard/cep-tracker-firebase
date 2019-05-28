@@ -14,8 +14,8 @@ else
   read -n 1 -s -r -p "Press any key to continue"
   echo "export CTF_DIR=$PWD" >> ${HOME}/.bash_profile
   echo
-  echo Env var added. Reloading profile...
-  source ${HOME}/.bash_profile
+  echo Env var was added to your .bash_profile.
+  export CTF_DIR=${PWD}
 fi
 
 echo
