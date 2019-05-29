@@ -85,7 +85,7 @@ class CepTracker
     while !options.last.nil? and !valid_integer?(options.last)
       puts "Please supply a valid integer for record retrieval:"
       puts
-      last = gets.chomp
+      last = STDIN.gets.chomp
       if valid_integer?(last)
         options.last = last
       end
@@ -94,7 +94,7 @@ class CepTracker
     while options.tracker_id.nil? && no_other_options?
       puts "Please enter story id:"
       puts
-      tracker_id = gets.chomp
+      tracker_id = STDIN.gets.chomp
       tracker_id[0] = '' if tracker_id[0] == '#'
       if valid_integer?(tracker_id)
         options.tracker_id = tracker_id
@@ -109,7 +109,7 @@ class CepTracker
         puts "#{num}. #{e}"
       end
       puts "Choose an event number:"
-      event = gets.chomp
+      event = STDIN.gets.chomp
       if event.to_i > 0 && event.to_i <= EVENTS.size
         options.event = EVENTS[event.to_i - 1]
       end
@@ -118,7 +118,7 @@ class CepTracker
     while options.event == 'start' && options.points.nil?
       puts "How many points?"
       puts
-      points = gets.chomp
+      points = STDIN.gets.chomp
       if valid_points?(points)
         options.points = points
       end
@@ -134,7 +134,7 @@ class CepTracker
         end
         puts
         puts "please enter a reason number:"
-        reason = gets.chomp
+        reason = STDIN.gets.chomp
         if reason.to_i > 0 && reason.to_i <= REASONS.size
           options.reason = REASONS[reason.to_i - 1]
         end
@@ -144,7 +144,7 @@ class CepTracker
     if requires_a_reason && options.extended_reason.nil?
       puts "Would you like to elaborate?"
       puts
-      options.extended_reason = gets.chomp
+      options.extended_reason = STDIN.gets.chomp
     end
   end
 
@@ -288,14 +288,14 @@ class CepTracker
   def confirm_parsed_time?
     puts "Is this the time you want (y/n)? #{parsed_time}"
     puts
-    answer = gets.chomp
+    answer = STDIN.gets.chomp
     answer == 'y'
   end
 
   def obtain_new_time_from_user
     puts "Please re-enter time like yyyy-mm-dd hh:mm:ss:"
     puts
-    options.timestamp = gets.chomp
+    options.timestamp = STDIN.gets.chomp
   end
 
   def load_local_settings
