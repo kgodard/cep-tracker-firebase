@@ -20,15 +20,15 @@ else
 fi
 
 echo
-echo checking for ruby 2.5.5...
+echo checking for ruby 2.6.3...
 echo
 
 cd $CTF_DIR
 
-if [[ $(ruby -v | grep 2.5.5) ]]; then
-  echo ">> Ruby version 2.5.5 available."
+if [[ $(ruby -v | grep 2.6.3) ]]; then
+  echo ">> Ruby version 2.6.3 available."
 else
-  echo ERROR: CTF requires ruby version 2.5.5.
+  echo ERROR: CTF requires ruby version 2.6.3.
   echo Please use your preferred version manager to install it and re-run this script.
   exit 1
 fi
