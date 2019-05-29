@@ -1,7 +1,7 @@
 class CepTracker
 
-  NON_REASON_EVENTS = %w[ start resume finish restart play ]
-  REASON_EVENTS = %w[ stop reject block pause ]
+  NON_REASON_EVENTS = %w[ start finish resume restart ]
+  REASON_EVENTS = %w[ stop block reject ]
   EVENTS = NON_REASON_EVENTS + REASON_EVENTS
 
   REASONS = %w[ bug cep hardware firmware devops it bad_ac qa priority_change other ].map(&:upcase)
