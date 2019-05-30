@@ -1,23 +1,32 @@
 #!/bin/bash
 
-export CTF_DIR=$PWD
-
 echo
 echo checking for CTF_DIR environment var...
 echo
 
-if [[ $(grep CTF_DIR ${HOME}/.bash_profile) ]]; then
-  echo ">> CTF_DIR is set in .bash_profile"
-else
+if [[ -z "$CTF_DIR" ]]; then
   echo We need to add this line to your ~/.bash_profile:
   echo
   echo "export CTF_DIR=$PWD"
   echo
-  read -n 1 -s -r -p "Press any key to add it..."
+  read -p "Type 'y' to append the line to your ~/.bash_profile " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+    echo
+    echo Please add the export line above to your preferred login profile script,
+    echo launch a new terminal window or source your updated script,
+    echo and re-run ./ctf-setup.sh
+    exit 1
+  fi
   echo "export CTF_DIR=$PWD" >> ${HOME}/.bash_profile
   echo
   echo ">> CTF_DIR env var was added to your .bash_profile."
+else
+  echo ">> CTF_DIR is set"
 fi
+
+export CTF_DIR=$PWD
 
 echo
 echo checking for ruby 2.6.3...
@@ -75,9 +84,19 @@ fi
 echo
 echo Copying ctf launcher file...
 echo
-cp $CTF_DIR/bin/ctf /usr/local/bin
+
+if [[ $(echo $PATH | grep /usr/local/bin) ]]; then
+  cp $CTF_DIR/bin/ctf /usr/local/bin
+  echo Done! Please enjoy ctf tracker responsibly.
+  echo
+  echo ">> type 'ctf -h' for options"
+else
+  echo "You don't seem to have /usr/local/bin in your path."
+  echo "You will need to copy /bin/ctf to a directory in your"
+  echo "PATH manually before using ctf."
+fi
 echo
-echo Done! Please enjoy ctf tracker responsibly.
-echo
-echo ">> type 'ctf -h' for options"
+echo NOTE: If this is your first time running setup,
+echo you may need to: source ~/.bash_profile or
+echo launch a new terminal window.
 echo
