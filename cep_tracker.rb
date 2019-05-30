@@ -21,7 +21,7 @@ class CepTracker
 
   def option_parser
     @parser ||= OptionParser.new do |parser|
-      parser.banner = "Usage: ctf.rb [options]"
+      parser.banner = "Usage: ctf [options]"
       parser.separator ""
       parser.separator "Specific options:"
 
