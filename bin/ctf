@@ -1,1 +1,22 @@
-(cd $CTF_DIR && ./ctf.rb $@)
+#!/bin/bash
+ARGS=""
+whitespace="[[:space:]]"
+
+# verify that $CTF_DIR is set before continuing
+if [[ -z "$CTF_DIR" ]]; then
+  echo ">> CTF_DIR environment variable not defined. Please run ctf-setup.sh"
+  exit 1
+fi
+
+for arg in "$@"
+do
+  if [[ $arg =~ $whitespace ]]
+  then
+    arg=\'$arg\'
+  fi
+  ARGS+=" ${arg}"
+done
+
+COMND="(cd $CTF_DIR && ./ctf.rb $ARGS)"
+
+eval $COMND
