@@ -48,7 +48,7 @@ echo
 
 cd $CTF_DIR
 
-if [[ $(gem list bundler | grep bundler) ]]; then
+if [[ $(gem list bundler | grep 2.0.1) ]]; then
   echo ">> Bundler installed."
 else
   echo Installing bundler...
