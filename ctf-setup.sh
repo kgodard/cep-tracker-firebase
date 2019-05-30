@@ -73,20 +73,11 @@ else
 fi
 
 echo
-echo Checking for ctf launcher file...
+echo Copying ctf launcher file...
 echo
-
-if [ -f "/usr/local/bin/ctf" ]; then
-  echo ">> /usr/local/bin/ctf exists, you're all set!"
-  echo
-  echo ">> type 'ctf -h' for options"
-  echo
-else
-  echo Copying the ctf launcher to /usr/local/bin...
-  cp $CTF_DIR/bin/ctf /usr/local/bin
-  echo
-  echo Done! Please enjoy ctf tracker responsibly.
-  echo
-  echo ">> type 'ctf -h' for options"
-  echo
-fi
+cp $CTF_DIR/bin/ctf /usr/local/bin
+echo
+echo Done! Please enjoy ctf tracker responsibly.
+echo
+echo ">> type 'ctf -h' for options"
+echo
