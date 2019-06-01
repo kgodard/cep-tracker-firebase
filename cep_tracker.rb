@@ -8,7 +8,7 @@ class CepTracker
 
   LOCAL_SETTINGS_FILE = 'ctf_settings.yml'
 
-  attr_reader :firebase, :options, :parser, :local_settings
+  attr_reader :firebase, :options, :parser, :local_settings, :ads_story
 
   def initialize(args)
     @options        = ScriptOptions.new
@@ -16,6 +16,7 @@ class CepTracker
     @firebase       = Firebase::Client.new(firebase_uri, firebase_secret)
     option_parser.parse!(args)
     get_inputs
+    perform_ads_story_action
     perform_firebase_action
   end
 
@@ -27,7 +28,7 @@ class CepTracker
 
       # additional options
       parser.on("-t", "--tracker TRACKERID", "specify story id") do |tracker_id|
-        options.tracker_id = tracker_id
+        set_tracker_id(tracker_id)
       end
 
       parser.on("-p", "--points POINTS", "specify story points") do |points|
@@ -35,7 +36,7 @@ class CepTracker
       end
 
       parser.on("-e", "--event EVENT", "specify event, ex: 'start'") do |event|
-        options.event = event
+        set_event(event)
       end
 
       parser.on("-r", "--reason REASON", "specify reason, ex: BUG") do |reason|
@@ -97,7 +98,7 @@ class CepTracker
       tracker_id = STDIN.gets.chomp
       tracker_id[0] = '' if tracker_id[0] == '#'
       if valid_integer?(tracker_id)
-        options.tracker_id = tracker_id
+        set_tracker_id(tracker_id)
       end
     end
 
@@ -110,9 +111,7 @@ class CepTracker
       end
       puts "Choose an event number:"
       event = STDIN.gets.chomp
-      if event.to_i > 0 && event.to_i <= EVENTS.size
-        options.event = EVENTS[event.to_i - 1]
-      end
+      set_event_by_number(event)
     end
 
     while options.event == 'start' && options.points.nil?
@@ -206,11 +205,34 @@ class CepTracker
     tracker_id = options.search_id
     title = "Events for story id: #{tracker_id}:"
     tracker_id[0] = '' if tracker_id[0] == '#'
+    set_tracker_id(tracker_id)
     params = {
       orderBy: '"tracker_id"',
       equalTo: "\"#{tracker_id}\""
     }
     report_on(title, params)
+  end
+
+  def perform_ads_story_action
+    if ads_story && options.tracker_id && options.event
+      case options.event
+      when 'start'
+        ads_story.start
+      when 'finish'
+        ads_story.finish
+      when 'stop'
+        ads_story.stop(reason: full_reason)
+      when 'block'
+        ads_story.block(reason: full_reason)
+      when 'resume'
+        ads_story.resume
+      when 'reject'
+        ads_story.reject(reason: full_reason)
+      when 'restart'
+        ads_story.restart
+      else
+      end
+    end
   end
 
   def perform_firebase_action
@@ -308,6 +330,57 @@ class CepTracker
 
 private
 
+  def full_reason
+    reason = options.reason
+    ext_reason = options.extended_reason.to_s.strip
+    if ext_reason.empty?
+      reason
+    else
+      [reason, ext_reason].join(" - ")
+    end
+  end
+
+  def set_story_points
+    if options.event == 'start' && ads_story
+      options.points = ads_story.points
+    end
+  end
+
+  def set_event(event_name)
+    if valid_event_name?(event_name)
+      options.event = event_name
+      set_story_points
+    end
+  end
+
+  def set_event_by_number(event)
+    if valid_event_number?(event)
+      event_name = EVENTS[event.to_i - 1]
+      options.event = event_name
+      set_story_points
+    end
+  end
+
+  def valid_event_name?(event_name)
+    EVENTS.include?(event_name)
+  end
+
+  def valid_event_number?(event)
+    event.to_i > 0 && event.to_i <= EVENTS.size
+  end
+
+  def set_tracker_id(tracker_id)
+    set_ads_story(tracker_id)
+    AdsStoryDisplay.new(ads_story).render
+    options.tracker_id = tracker_id
+  end
+
+  def set_ads_story(id)
+    @ads_story = AdsStory.new(id: id)
+  rescue => e
+    abort(e.message)
+  end
+
   def requires_a_reason
     REASON_EVENTS.include? options.event
   end
@@ -382,7 +455,7 @@ private
 
   def point_display_for(event)
     unless event['points'].nil?
-      ('points: ' + event['points']).ljust(11)
+      ("points: #{event['points']}").ljust(11)
     else
       ''.ljust(11)
     end
