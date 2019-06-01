@@ -9,6 +9,7 @@ class AdsStory
   # tags
   STOPPED = 'Stopped'
   BLOCKED = 'Blocked'
+  REJECTED = 'Rejected'
   # states
   RESET = 'New'
   STARTED = 'Active'
@@ -39,28 +40,42 @@ class AdsStory
     update({state: STARTED})
   end
 
+  def restart
+    remove_tag(REJECTED) if rejected?
+    start
+  end
+
   def reset
     update({state: RESET})
+  end
+
+  def reject(reason: '')
+    reset
+    add_tag(REJECTED)
+    add_comment(reason)
   end
 
   def finish
     update({state: FINISHED})
   end
 
-  def stop(reason: nil)
+  def stop(reason: '')
     add_tag(STOPPED)
-    add_comment(reason) if reason
+    add_comment(reason)
   end
 
-  def block(reason: nil)
+  def block(reason: '')
     add_tag(BLOCKED)
-    add_comment(reason) if reason
+    add_comment(reason)
   end
 
-  def resume(reason: nil)
+  def resume
     remove_tag(BLOCKED) if blocked?
     remove_tag(STOPPED) if stopped?
-    add_comment(reason) if reason
+  end
+
+  def rejected?
+    has_tag?(REJECTED)
   end
 
   def stopped?
@@ -76,7 +91,10 @@ class AdsStory
   end
 
   def add_comment(comment)
-    update({discussion: comment})
+    comment = comment.to_s.strip
+    unless comment.empty?
+      update({discussion: comment})
+    end
   end
 
   def add_tag(tag)
@@ -124,18 +142,22 @@ private
 
   def load_story(json)
     az_story = json
-    @url         = az_story["url"]
-    @area        = az_story["fields"]["System.AreaLevel3"]
-    @iteration   = az_story["fields"]["System.IterationLevel3"]
-    @state       = az_story["fields"]["System.State"]
-    @type        = az_story["fields"]["System.WorkItemType"]
-    @title       = az_story["fields"]["System.Title"]
-    @points      = az_story["fields"]["Microsoft.VSTS.Scheduling.StoryPoints"]
-    @column      = az_story["fields"]["System.BoardColumn"]
-    @tags        = az_story["fields"]["System.Tags"]
-    @history     = az_story["fields"]["System.History"]
-    @description = az_story["fields"]["System.Description"]
-    return true
+    if az_story.empty?
+      raise "ADS story #{id} was not found!"
+    else
+      @url         = az_story["url"]
+      @area        = az_story["fields"]["System.AreaLevel3"]
+      @iteration   = az_story["fields"]["System.IterationLevel3"]
+      @state       = az_story["fields"]["System.State"]
+      @type        = az_story["fields"]["System.WorkItemType"]
+      @title       = az_story["fields"]["System.Title"]
+      @points      = az_story["fields"]["Microsoft.VSTS.Scheduling.StoryPoints"]
+      @column      = az_story["fields"]["System.BoardColumn"]
+      @tags        = az_story["fields"]["System.Tags"]
+      @history     = az_story["fields"]["System.History"]
+      @description = az_story["fields"]["System.Description"]
+      return true
+    end
   end
 
   def az_update_fields(args = {})
@@ -163,7 +185,7 @@ private
 
   def az_fetch
    response = `az boards work-item show --id #{id}` 
-   JSON.parse(response)
+   JSON.parse(response) rescue {}
   end
 
 end
