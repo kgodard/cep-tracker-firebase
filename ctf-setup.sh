@@ -9,7 +9,7 @@ if hash az 2>/dev/null; then
 else
   echo Please install the azure command-line client:
   echo
-  echo "brew update && brew install az-cli"
+  echo "brew update && brew install azure-cli"
   echo az login
   echo
   echo Then re-run ./ctf-setup.sh
@@ -21,7 +21,7 @@ echo Verifying azure login...
 echo
 
 if [[ $(az account show | grep Enabled) ]]; then
-  echo ">> az-cli is logged in."
+  echo ">> azure-cli is logged in."
 else
   echo
   echo Then re-run ./ctf-setup.sh
