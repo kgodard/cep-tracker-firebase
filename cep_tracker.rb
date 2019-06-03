@@ -217,6 +217,7 @@ class CepTracker
     if ads_story && options.tracker_id && options.event
       case options.event
       when 'start'
+        set_ads_story_points
         ads_story.start
       when 'finish'
         ads_story.finish
@@ -232,6 +233,12 @@ class CepTracker
         ads_story.restart
       else
       end
+    end
+  end
+
+  def set_ads_story_points
+    if options.points && ads_story && ads_story.points.to_s.strip.empty?
+      ads_story.set_points(options.points)
     end
   end
 
@@ -342,7 +349,9 @@ private
 
   def set_story_points
     if options.event == 'start' && ads_story
-      options.points = ads_story.points
+      unless ads_story.points.to_s.strip.empty?
+        options.points = ads_story.points
+      end
     end
   end
 
