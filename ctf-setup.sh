@@ -29,6 +29,32 @@ else
 fi
 
 echo
+echo Checking for azure-devops extension...
+echo
+
+if [[ $(az extension list | grep azure-devops) ]]; then
+  echo ">> azure-devops extension installed"
+else
+  echo Installing azure-devops extension...
+  az extension add --name azure-devops
+  echo
+  echo ">> azure-devops extension installed"
+fi
+
+echo
+echo Checking for Itron organization...
+echo
+
+if [[ $(az devops configure -l | grep itron) ]]; then
+  echo ">> azure-devops organization set"
+else
+  echo Setting organization...
+  az devops configure --defaults organization=https://dev.azure.com/itron
+  echo
+  echo ">> azure-devops organization set"
+fi
+
+echo
 echo checking for CTF_DIR environment var...
 echo
 
