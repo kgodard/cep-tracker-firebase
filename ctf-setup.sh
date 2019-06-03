@@ -1,6 +1,34 @@
 #!/bin/bash
 
 echo
+echo checking for azure-cli...
+echo
+
+if hash az 2>/dev/null; then
+  echo ">> az-cli is installed"
+else
+  echo Please install the azure command-line client:
+  echo
+  echo "brew update && brew install az-cli"
+  echo az login
+  echo
+  echo Then re-run ./ctf-setup.sh
+  exit 1
+fi
+
+echo
+echo Verifying azure login...
+echo
+
+if [[ $(az account show | grep Enabled) ]]; then
+  echo ">> az-cli is logged in."
+else
+  echo
+  echo Then re-run ./ctf-setup.sh
+  exit 1
+fi
+
+echo
 echo checking for CTF_DIR environment var...
 echo
 
