@@ -97,6 +97,11 @@ class AdsStory
     end
   end
 
+  def set_points(points)
+    fields = {"Microsoft.VSTS.Scheduling.StoryPoints": points}
+    update_fields(fields)
+  end
+
   def add_tag(tag)
     fields = {tags: append_tag(tag)}
     update_fields(fields)
