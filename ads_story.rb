@@ -37,7 +37,7 @@ class AdsStory
   end
 
   def start
-    update({state: STARTED})
+    update({state: STARTED}) unless state == STARTED
   end
 
   def restart
@@ -46,26 +46,26 @@ class AdsStory
   end
 
   def reset
-    update({state: RESET})
+    update({state: RESET}) unless state == RESET
   end
 
   def reject(reason: '')
-    reset
-    add_tag(REJECTED)
+    start
+    add_tag(REJECTED) unless rejected?
     add_comment(reason)
   end
 
   def finish
-    update({state: FINISHED})
+    update({state: FINISHED}) unless state == FINISHED
   end
 
   def stop(reason: '')
-    add_tag(STOPPED)
+    add_tag(STOPPED) unless stopped?
     add_comment(reason)
   end
 
   def block(reason: '')
-    add_tag(BLOCKED)
+    add_tag(BLOCKED) unless blocked?
     add_comment(reason)
   end
 
