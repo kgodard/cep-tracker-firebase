@@ -18,7 +18,7 @@ class Sprint
   def finished_points
     stories.inject(0.0) do |sum, story|
       sum += story.points
-    end
+    end.round(2)
   end
 
   def rejection_percent

@@ -1,8 +1,35 @@
 class CepTracker
 
-  NON_REASON_EVENTS = %w[ start finish resume restart ]
-  REASON_EVENTS = %w[ stop block reject ]
-  EVENTS = NON_REASON_EVENTS + REASON_EVENTS
+  EVENTS = {
+    start: {
+      requires_a_reason: false,
+      allowed_next: [:finish, :stop, :block]
+    },
+    finish: {
+      requires_a_reason: false,
+      allowed_next: [:reject]
+    },
+    resume: {
+      requires_a_reason: false,
+      allowed_next: [:finish, :stop, :block]
+    },
+    restart: {
+      requires_a_reason: false,
+      allowed_next: [:finish, :stop, :block]
+    },
+    stop: {
+      requires_a_reason: true,
+      allowed_next: [:resume]
+    },
+    block: {
+      requires_a_reason: true,
+      allowed_next: [:resume]
+    },
+    reject: {
+      requires_a_reason: true,
+      allowed_next: [:restart]
+    }
+  }
 
   REASONS = %w[ bug cep hardware firmware devops it bad_ac qa priority_change other ].map(&:upcase)
 
@@ -80,12 +107,11 @@ class CepTracker
 
   def get_inputs
 
-    options.event = nil unless EVENTS.include?(options.event)
+    options.event = nil unless EVENTS.keys.map(&:to_s).include?(options.event)
     options.reason = nil unless REASONS.include?(options.reason)
 
     while !options.last.nil? and !valid_integer?(options.last)
-      puts "Please supply a valid integer for record retrieval:"
-      puts
+      print "Please supply a valid integer for record retrieval: "
       last = STDIN.gets.chomp
       if valid_integer?(last)
         options.last = last
@@ -93,8 +119,7 @@ class CepTracker
     end
 
     while options.tracker_id.nil? && no_other_options?
-      puts "Please enter story id:"
-      puts
+      print "Please enter story id: "
       tracker_id = STDIN.gets.chomp
       tracker_id[0] = '' if tracker_id[0] == '#'
       if valid_integer?(tracker_id)
@@ -103,19 +128,23 @@ class CepTracker
     end
 
     while options.event.nil? && no_other_options?
+      puts
       puts "Event type required."
       puts
-      EVENTS.each_with_index do |e, i|
-        num = i + 1
-        puts "#{num}. #{e}"
+      EVENTS.keys.each_with_index do |e, i|
+        if event_allowed_next?(e)
+          num = i + 1
+          puts "#{num}. #{e}"
+        end
       end
-      puts "Choose an event number:"
+      puts
+      print "Choose an event number: "
       event = STDIN.gets.chomp
       set_event_by_number(event)
     end
 
     while options.event == 'start' && options.points.nil?
-      puts "How many points?"
+      print "How many points? "
       puts
       points = STDIN.gets.chomp
       if valid_points?(points)
@@ -132,7 +161,7 @@ class CepTracker
           puts "#{num}. #{r}"
         end
         puts
-        puts "please enter a reason number:"
+        print "please enter a reason number: "
         reason = STDIN.gets.chomp
         if reason.to_i > 0 && reason.to_i <= REASONS.size
           options.reason = REASONS[reason.to_i - 1]
@@ -141,7 +170,7 @@ class CepTracker
     end
 
     if requires_a_reason && options.extended_reason.nil?
-      puts "Would you like to elaborate?"
+      puts "Type additional details or <enter> for none:"
       puts
       options.extended_reason = STDIN.gets.chomp
     end
@@ -201,6 +230,8 @@ class CepTracker
     report_on(title, params)
   end
 
+  # TODO: use already cached fb_events instead of
+  # running the same query via report_on
   def perform_id_search
     tracker_id = options.search_id
     title = "Events for story id: #{tracker_id}:"
@@ -337,6 +368,26 @@ class CepTracker
 
 private
 
+  def event_allowed_next?(event)
+    if last_fb_event.nil?
+      event == :start ? true : false
+    else
+      EVENTS[last_fb_event.to_sym][:allowed_next].include?(event)
+    end
+  end
+
+  def last_fb_event
+    if fb_events.empty?
+      nil
+    else
+      fb_events.last["event"]
+    end
+  end
+
+  def fb_events
+    @fb_events ||= all_events_for(tracker_id: options.tracker_id)
+  end
+
   def full_reason
     reason = options.reason
     ext_reason = options.extended_reason.to_s.strip
@@ -357,31 +408,32 @@ private
 
   def set_event(event_name)
     if valid_event_name?(event_name)
-      options.event = event_name
+      options.event = event_name.to_s
       set_story_points
     end
   end
 
-  def set_event_by_number(event)
-    if valid_event_number?(event)
-      event_name = EVENTS[event.to_i - 1]
-      options.event = event_name
+  def set_event_by_number(event_number)
+    if valid_event_number?(event_number)
+      event_name = EVENTS.keys[event_number.to_i - 1]
+      options.event = event_name.to_s
       set_story_points
     end
   end
 
   def valid_event_name?(event_name)
-    EVENTS.include?(event_name)
+    EVENTS.keys.map(&:to_s).include?(event_name)
   end
 
   def valid_event_number?(event)
-    event.to_i > 0 && event.to_i <= EVENTS.size
+    event.to_i > 0 && event.to_i <= EVENTS.keys.size
   end
 
   def set_tracker_id(tracker_id)
     set_ads_story(tracker_id)
     AdsStoryDisplay.new(ads_story).render
     options.tracker_id = tracker_id
+    fb_events
   end
 
   def set_ads_story(id)
@@ -391,7 +443,8 @@ private
   end
 
   def requires_a_reason
-    REASON_EVENTS.include? options.event
+    return false if options.event.nil?
+    EVENTS[options.event.to_sym][:requires_a_reason]
   end
 
   def valid_points?(val)
@@ -433,7 +486,7 @@ private
 
   def report_on(title, params)
     path = rest_request(params)
-    events = fetch_events(path) rescue []
+    events = fetch_events(path)
     puts
     puts title
     puts
@@ -473,6 +526,8 @@ private
   def fetch_events(path)
     events = JSON.parse `curl #{path}`
     events.values.sort_by {|e| e['created_at']}
+  rescue => e
+    abort("Error fetching events from firebase: #{e.message}")
   end
 
   def rest_request(params)
