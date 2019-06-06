@@ -1,4 +1,5 @@
 class FirebaseEvent
+  DEBUG = false
   attr_reader :firebase, :firebase_uri, :firebase_secret
 
   def initialize(firebase_uri:, firebase_secret:)
@@ -8,6 +9,7 @@ class FirebaseEvent
   end
 
   def search(params: {})
+    puts "DEBUG: SEARCH #{params.inspect}" if DEBUG
     abort("Empty params! #{params}") if params.empty?
     path = rest_request(params)
     events = JSON.parse `curl #{path}`
@@ -18,11 +20,13 @@ class FirebaseEvent
   end
 
   def create(params: {})
+    puts "DEBUG: CREATE #{params.inspect}" if DEBUG
     abort("Empty params! #{params}") if params.empty?
     firebase.push( 'events', params )
   end
 
   def fetch(event_key:)
+    puts "FETCH: EVENT_KEY: #{event_key}" if DEBUG
     firebase.get("events/#{event_key}")
   end
 
