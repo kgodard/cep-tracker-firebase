@@ -35,12 +35,16 @@ class CepTracker
 
   LOCAL_SETTINGS_FILE = 'ctf_settings.yml'
 
-  attr_reader :firebase, :options, :parser, :local_settings, :ads_story
+  attr_reader :firebase_event, :options, :parser, :dev_name, :ads_story
 
   def initialize(args)
+    local_settings  = load_local_settings
     @options        = ScriptOptions.new
-    @local_settings = load_local_settings
-    @firebase       = Firebase::Client.new(firebase_uri, firebase_secret)
+    @dev_name       = local_settings['dev_name']
+    @firebase_event = FirebaseEvent.new(
+      firebase_uri:    local_settings['firebase_uri'],
+      firebase_secret: local_settings['firebase_secret']
+    )
     option_parser.parse!(args)
     get_inputs
     perform_ads_story_action
@@ -182,21 +186,20 @@ class CepTracker
       startAt: sprint_start_seconds,
       endAt: sprint_end_seconds
     }
-    path = rest_request(params)
-    events = fetch_events(path)
+    fb_events = fetch_fb_events(params)
 
-    finished = events.select {|e| e['event'] == 'finish'}
+    finished = fb_events.select {|e| e['event'] == 'finish'}
     uniq_finished = finished.uniq {|e| e['tracker_id'].to_s + e['dev_name'] }
     stories = stories_for(finished_events: uniq_finished)
 
-    reject_event_count = events.count {|e| e['event'] == 'reject'}
+    reject_event_count = fb_events.count {|e| e['event'] == 'reject'}
 
     sprint = Sprint.new(stories: stories, reject_event_count: reject_event_count)
 
     puts
     puts "Events for sprint ending #{options.sprint_end}:"
     puts report_rule
-    display_formatted events
+    display_formatted fb_events
     puts
     puts "Finished stories for sprint ending #{options.sprint_end}:"
     puts report_rule
@@ -218,7 +221,8 @@ class CepTracker
       orderBy: '"created_at"',
       startAt: start_time
     }
-    report_on(title, params)
+    fb_events = fetch_fb_events(params)
+    report_on(title, fb_events)
   end
 
   def perform_last
@@ -227,21 +231,16 @@ class CepTracker
       orderBy: '"created_at"',
       limitToLast: options.last
     }
-    report_on(title, params)
+    fb_events = fetch_fb_events(params)
+    report_on(title, fb_events)
   end
 
-  # TODO: use already cached fb_events instead of
-  # running the same query via report_on
   def perform_id_search
     tracker_id = options.search_id
     title = "Events for story id: #{tracker_id}:"
     tracker_id[0] = '' if tracker_id[0] == '#'
     set_tracker_id(tracker_id)
-    params = {
-      orderBy: '"tracker_id"',
-      equalTo: "\"#{tracker_id}\""
-    }
-    report_on(title, params)
+    report_on(title, fb_events)
   end
 
   def perform_ads_story_action
@@ -274,9 +273,9 @@ class CepTracker
   end
 
   def perform_firebase_action
-
+    # create
     if options.tracker_id && options.event
-      response = firebase.push( 'events',
+      response = firebase_event.create(params:
         {
           tracker_id:      options.tracker_id,
           points:          options.points,
@@ -290,6 +289,7 @@ class CepTracker
 
       if response.success?
         event_key = JSON.parse(response.raw_body)['name']
+        # fetch
         new_event = retrieve_event(event_key)
 
         puts
@@ -316,7 +316,7 @@ class CepTracker
   end
 
   def retrieve_event(event_key)
-    response = firebase.get("events/#{event_key}")
+    response = firebase_event.fetch(event_key: event_key)
     if response.success?
       JSON.parse response.raw_body
     else
@@ -324,10 +324,6 @@ class CepTracker
     end
   rescue
     "Error: unable to retrieve event."
-  end
-
-  def dev_name
-    local_settings['dev_name']
   end
 
   def parsed_timestamp
@@ -472,8 +468,7 @@ private
       orderBy: '"tracker_id"',
       equalTo: "\"#{tracker_id}\""
     }
-    path = rest_request(params)
-    fetch_events(path)
+    fetch_fb_events(params)
   end
 
   def sprint_start_seconds
@@ -484,13 +479,14 @@ private
     parsed_time(options.sprint_end).to_i
   end
 
-  def report_on(title, params)
-    path = rest_request(params)
-    events = fetch_events(path)
+  def report_on(title, fb_events)
+    if fb_events.empty?
+      title = "No events found."
+    end
     puts
     puts title
     puts
-    display_formatted(events)
+    display_formatted(fb_events)
     puts
   end
 
@@ -523,31 +519,8 @@ private
     end
   end
 
-  def fetch_events(path)
-    events = JSON.parse `curl #{path}`
-    events.values.sort_by {|e| e['created_at']}
-  rescue => e
-    abort("Error fetching events from firebase: #{e.message}")
-  end
-
-  def rest_request(params)
-    base = url_with_auth
-    params.each do |k,v|
-      base += "&#{k}=#{v}"
-    end
-    base.to_json
-  end
-
-  def url_with_auth
-    "#{firebase_uri}/events.json?auth=#{firebase_secret}"
-  end
-
-  def firebase_uri
-    local_settings['firebase_uri']
-  end
-
-  def firebase_secret
-    local_settings['firebase_secret']
+  def fetch_fb_events(params)
+    firebase_event.search(params: params)
   end
 
   def pipe
