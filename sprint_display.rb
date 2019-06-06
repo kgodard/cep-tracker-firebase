@@ -1,11 +1,11 @@
 class SprintDisplay
-  attr_reader :sprint, :sprint_events, :uniq_finished, :sprint_end
+  attr_reader :sprint, :sprint_events, :uniq_finished_events, :sprint_end
 
-  def initialize(sprint:, sprint_events:, uniq_finished:, sprint_end:)
-    @sprint = sprint
-    @sprint_events = sprint_events
-    @uniq_finished = uniq_finished
-    @sprint_end = sprint_end
+  def initialize(sprint:)
+    @sprint               = sprint
+    @sprint_events        = sprint.sprint_events
+    @uniq_finished_events = sprint.uniq_finished_events
+    @sprint_end           = sprint.sprint_end
   end
 
   def render
@@ -16,7 +16,7 @@ class SprintDisplay
     puts
     puts "Finished stories for sprint ending #{sprint_end}:"
     report_rule
-    EventDisplay.new(events: uniq_finished, with_points: false).render
+    EventDisplay.new(events: uniq_finished_events, with_points: false).render
     puts
     puts "Sprint Metrics for sprint ending #{sprint_end}:"
     report_rule

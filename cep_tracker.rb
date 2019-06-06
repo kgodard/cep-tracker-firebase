@@ -181,25 +181,8 @@ class CepTracker
   end
 
   def perform_sprint_end
-    params = {
-      orderBy: '"created_at"',
-      startAt: sprint_start_seconds,
-      endAt: sprint_end_seconds
-    }
-    sprint_events = fetch_fb_events(params)
-    finished = sprint_events.select {|e| e['event'] == 'finish'}
-    uniq_finished = finished.uniq {|e| e['tracker_id'].to_s + e['dev_name'] }
-    stories = stories_for(finished_events: uniq_finished)
-    reject_event_count = sprint_events.count {|e| e['event'] == 'reject'}
-
-    sprint = Sprint.new(stories: stories, reject_event_count: reject_event_count)
-
-    SprintDisplay.new(
-      sprint: sprint,
-      sprint_events: sprint_events,
-      uniq_finished: uniq_finished,
-      sprint_end: options.sprint_end
-    ).render
+    sprint = Sprint.new(sprint_end: options.sprint_end, firebase_event: firebase_event)
+    SprintDisplay.new( sprint: sprint).render
   end
 
   def perform_since
@@ -440,17 +423,6 @@ private
     !!result
   end
 
-  def stories_for(finished_events:)
-    finished_events.map do |event|
-      story_events = all_events_for(tracker_id: event['tracker_id'])
-      Story.new(
-        events: story_events,
-        developer: event['dev_name'],
-        sprint_start_seconds: sprint_start_seconds
-      )
-    end
-  end
-
   def all_events_for(tracker_id:)
     params = {
       orderBy: '"tracker_id"',
@@ -459,24 +431,8 @@ private
     fetch_fb_events(params)
   end
 
-  def sprint_start_seconds
-    parsed_time(options.sprint_end).to_i - sprint_length
-  end
-
-  def sprint_end_seconds
-    parsed_time(options.sprint_end).to_i
-  end
-
   def fetch_fb_events(params)
     firebase_event.search(params: params)
-  end
-
-  def sprint_length
-    14 * one_day
-  end
-
-  def one_day
-    24 * 60 * 60
   end
 end
 
