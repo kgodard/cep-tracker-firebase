@@ -187,31 +187,19 @@ class CepTracker
       endAt: sprint_end_seconds
     }
     sprint_events = fetch_fb_events(params)
-
     finished = sprint_events.select {|e| e['event'] == 'finish'}
     uniq_finished = finished.uniq {|e| e['tracker_id'].to_s + e['dev_name'] }
     stories = stories_for(finished_events: uniq_finished)
-
     reject_event_count = sprint_events.count {|e| e['event'] == 'reject'}
 
     sprint = Sprint.new(stories: stories, reject_event_count: reject_event_count)
 
-    puts
-    puts "Events for sprint ending #{options.sprint_end}:"
-    puts report_rule
-    EventDisplay.new(events: sprint_events).render
-    puts
-    puts "Finished stories for sprint ending #{options.sprint_end}:"
-    puts report_rule
-    EventDisplay.new(events: uniq_finished, with_points: false).render
-    puts
-    puts "Sprint Metrics for sprint ending #{options.sprint_end}:"
-    puts report_rule
-    puts "Finished Points:    #{sprint.finished_points}"
-    puts "Avg Points Per Dev: #{sprint.average_points_per_developer}"
-    puts "Avg Cycle Hours:    #{sprint.average_cycle_hours} (#{sprint.average_cycle_days} days)"
-    puts "Rejection %:        #{sprint.rejection_percent}"
-    puts
+    SprintDisplay.new(
+      sprint: sprint,
+      sprint_events: sprint_events,
+      uniq_finished: uniq_finished,
+      sprint_end: options.sprint_end
+    ).render
   end
 
   def perform_since
@@ -477,10 +465,6 @@ private
 
   def sprint_end_seconds
     parsed_time(options.sprint_end).to_i
-  end
-
-  def report_rule
-    "----------------------------------------------------------------------"
   end
 
   def fetch_fb_events(params)
