@@ -7,7 +7,7 @@ class EventDisplay
     @with_points = with_points
   end
 
-  def call
+  def render
     if title
       puts
       puts report_title

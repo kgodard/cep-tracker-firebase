@@ -199,11 +199,11 @@ class CepTracker
     puts
     puts "Events for sprint ending #{options.sprint_end}:"
     puts report_rule
-    EventDisplay.new(events: sprint_events).call
+    EventDisplay.new(events: sprint_events).render
     puts
     puts "Finished stories for sprint ending #{options.sprint_end}:"
     puts report_rule
-    EventDisplay.new(events: uniq_finished, with_points: false).call
+    EventDisplay.new(events: uniq_finished, with_points: false).render
     puts
     puts "Sprint Metrics for sprint ending #{options.sprint_end}:"
     puts report_rule
@@ -222,7 +222,7 @@ class CepTracker
       startAt: start_time
     }
     since_events = fetch_fb_events(params)
-    EventDisplay.new(title: title, events: since_events).call
+    EventDisplay.new(title: title, events: since_events).render
   end
 
   def perform_last
@@ -232,7 +232,7 @@ class CepTracker
       limitToLast: options.last
     }
     last_events = fetch_fb_events(params)
-    EventDisplay.new(title: title, events: last_events).call
+    EventDisplay.new(title: title, events: last_events).render
   end
 
   def perform_id_search
@@ -240,7 +240,7 @@ class CepTracker
     title = "Events for story id: #{tracker_id}:"
     tracker_id[0] = '' if tracker_id[0] == '#'
     set_tracker_id(tracker_id)
-    EventDisplay.new(title: title, events: fb_events).call
+    EventDisplay.new(title: title, events: fb_events).render
   end
 
   def perform_ads_story_action
