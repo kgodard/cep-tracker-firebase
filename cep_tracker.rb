@@ -186,24 +186,24 @@ class CepTracker
       startAt: sprint_start_seconds,
       endAt: sprint_end_seconds
     }
-    fb_events = fetch_fb_events(params)
+    sprint_events = fetch_fb_events(params)
 
-    finished = fb_events.select {|e| e['event'] == 'finish'}
+    finished = sprint_events.select {|e| e['event'] == 'finish'}
     uniq_finished = finished.uniq {|e| e['tracker_id'].to_s + e['dev_name'] }
     stories = stories_for(finished_events: uniq_finished)
 
-    reject_event_count = fb_events.count {|e| e['event'] == 'reject'}
+    reject_event_count = sprint_events.count {|e| e['event'] == 'reject'}
 
     sprint = Sprint.new(stories: stories, reject_event_count: reject_event_count)
 
     puts
     puts "Events for sprint ending #{options.sprint_end}:"
     puts report_rule
-    display_formatted fb_events
+    EventDisplay.new(events: sprint_events).call
     puts
     puts "Finished stories for sprint ending #{options.sprint_end}:"
     puts report_rule
-    display_formatted uniq_finished, false
+    EventDisplay.new(events: uniq_finished, with_points: false).call
     puts
     puts "Sprint Metrics for sprint ending #{options.sprint_end}:"
     puts report_rule
@@ -221,8 +221,8 @@ class CepTracker
       orderBy: '"created_at"',
       startAt: start_time
     }
-    fb_events = fetch_fb_events(params)
-    report_on(title, fb_events)
+    since_events = fetch_fb_events(params)
+    EventDisplay.new(title: title, events: since_events).call
   end
 
   def perform_last
@@ -231,8 +231,8 @@ class CepTracker
       orderBy: '"created_at"',
       limitToLast: options.last
     }
-    fb_events = fetch_fb_events(params)
-    report_on(title, fb_events)
+    last_events = fetch_fb_events(params)
+    EventDisplay.new(title: title, events: last_events).call
   end
 
   def perform_id_search
@@ -240,7 +240,7 @@ class CepTracker
     title = "Events for story id: #{tracker_id}:"
     tracker_id[0] = '' if tracker_id[0] == '#'
     set_tracker_id(tracker_id)
-    report_on(title, fb_events)
+    EventDisplay.new(title: title, events: fb_events).call
   end
 
   def perform_ads_story_action
@@ -479,52 +479,12 @@ private
     parsed_time(options.sprint_end).to_i
   end
 
-  def report_on(title, fb_events)
-    if fb_events.empty?
-      title = "No events found."
-    end
-    puts
-    puts title
-    puts
-    display_formatted(fb_events)
-    puts
-  end
-
   def report_rule
     "----------------------------------------------------------------------"
   end
 
-  def display_formatted(events, with_points = true)
-    events.each do |event|
-      puts event_line(event, with_points)
-    end
-  end
-
-  def event_line(event, with_points)
-    ary = [
-      Time.at(event['created_at']).strftime("%a %b %e, %R"),
-      event['event'].ljust(8),
-      '#' + event['tracker_id'].to_s.ljust(11)
-    ]
-    ary << point_display_for(event) if with_points
-    ary << event['dev_name']
-    ary.join(pipe)
-  end
-
-  def point_display_for(event)
-    unless event['points'].nil?
-      ("points: #{event['points']}").ljust(11)
-    else
-      ''.ljust(11)
-    end
-  end
-
   def fetch_fb_events(params)
     firebase_event.search(params: params)
-  end
-
-  def pipe
-    ' | '
   end
 
   def sprint_length
