@@ -160,6 +160,7 @@ class CepTracker
     end
 
     if requires_a_reason && options.reason.nil?
+      puts
       puts "Event requires a reason."
       puts
       while options.reason.nil?
@@ -357,9 +358,9 @@ private
 
   def event_allowed_next?(event)
     if last_fb_event.nil?
-      event == :start ? true : false
+      event.to_sym == :start ? true : false
     else
-      EVENTS[last_fb_event.to_sym][:allowed_next].include?(event)
+      EVENTS[last_fb_event.to_sym][:allowed_next].include?(event.to_sym)
     end
   end
 
