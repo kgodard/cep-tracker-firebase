@@ -412,20 +412,21 @@ private
   def set_event(event_name)
     if valid_event_name?(event_name)
       options.event = event_name.to_s
-      set_story_points
+      if validate_event
+        set_story_points
+      end
     end
   end
 
   def set_event_by_number(event_number)
     if valid_event_number?(event_number)
       event_name = EVENTS.keys[event_number.to_i - 1]
-      options.event = event_name.to_s
-      set_story_points
+      set_event(event_name)
     end
   end
 
   def valid_event_name?(event_name)
-    EVENTS.keys.map(&:to_s).include?(event_name)
+    EVENTS.keys.map(&:to_s).include?(event_name.to_s)
   end
 
   def valid_event_number?(event)
