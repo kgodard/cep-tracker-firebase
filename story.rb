@@ -1,10 +1,14 @@
 # contains all events for a given story
 class Story
-  attr_reader :events, :developer, :sprint_start_seconds
+  attr_reader :tracker_id, :events, :developer, :sprint_start_seconds, :ads_story, :firebase_event
 
-  def initialize(events: [], developer: nil, sprint_start_seconds: nil)
-    @events, @developer = events, developer
+  def initialize(event:, firebase_event:, sprint_start_seconds: nil)
+    @tracker_id           = event['tracker_id']
+    @developer            = event['dev_name']
     @sprint_start_seconds = sprint_start_seconds
+    @firebase_event       = firebase_event
+    @events               = get_story_events
+    set_ads_story
   end
 
   def cycle_hours
@@ -19,7 +23,27 @@ class Story
     start_event['points'].to_f rescue 0.0
   end
 
+  %w[ type title area iteration ].each do | method_name |
+    define_method(method_name) do
+      ads_story.send method_name.to_sym
+    end
+  end
+
 private
+
+  def get_story_events
+    params = {
+      orderBy: '"tracker_id"',
+      equalTo: "\"#{tracker_id}\""
+    }
+    firebase_event.search(params: params)
+  end
+
+  def set_ads_story
+    @ads_story = AdsStory.new(id: tracker_id)
+  rescue => e
+    abort(e.message)
+  end
 
   def cycle_seconds
     start_to_finish_seconds - blocked_seconds
