@@ -31,7 +31,7 @@ class CepTracker
     }
   }
 
-  REASONS = %w[ bug cep hardware firmware devops it bad_ac qa priority_change other ].map(&:upcase)
+  REASONS = %w[ bug hardware firmware devops it bad_ac qa priority_change other ].map(&:upcase)
 
   LOCAL_SETTINGS_FILE = 'ctf_settings.yml'
 
