@@ -94,6 +94,10 @@ class CepTracker
         options.last = last
       end
 
+      parser.on("-c", "--comment COMMENT", "add a comment to ADS story (no event created), ex: 'I am Groot'") do |comment|
+        options.comment = comment
+      end
+
       parser.separator ""
       parser.separator "Common options:"
 
@@ -107,6 +111,10 @@ class CepTracker
 
   def no_other_options?
     options.last.nil? && options.since.nil? && options.sprint_end.nil? && options.search_id.nil?
+  end
+
+  def no_comment?
+    options.comment.nil?
   end
 
   def get_inputs
@@ -134,7 +142,7 @@ class CepTracker
     # reset event if it's not a valid next event
     validate_event
 
-    while options.event.nil? && no_other_options?
+    while options.event.nil? && no_other_options? && no_comment?
       puts
       puts "Event type required."
       puts
@@ -219,7 +227,7 @@ class CepTracker
   end
 
   def perform_ads_story_action
-    if ads_story && options.tracker_id && options.event
+    if ads_story && options.tracker_id
       case options.event
       when 'start'
         set_ads_story_points
@@ -237,6 +245,7 @@ class CepTracker
       when 'restart'
         ads_story.restart
       else
+        ads_story.add_comment(options.comment) unless options.comment.nil?
       end
     end
   end
@@ -285,6 +294,10 @@ class CepTracker
       perform_id_search
     elsif !options.sprint_end.nil?
       perform_sprint_end
+    elsif options.tracker_id && !options.comment.to_s.empty?
+      puts
+      puts "Added comment to ADS story ##{options.tracker_id}"
+      puts
     else
       puts "No action: missing required options!"
     end
