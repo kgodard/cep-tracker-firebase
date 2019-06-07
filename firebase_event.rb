@@ -12,7 +12,7 @@ class FirebaseEvent
     puts "DEBUG: SEARCH #{params.inspect}" if DEBUG
     abort("Empty params! #{params}") if params.empty?
     path = rest_request(params)
-    events = JSON.parse `curl #{path}`
+    events = JSON.parse fb_search(path)
     return [] if events.nil?
     events.values.sort_by {|e| e['created_at']}
   rescue => e
@@ -22,15 +22,38 @@ class FirebaseEvent
   def create(params: {})
     puts "DEBUG: CREATE #{params.inspect}" if DEBUG
     abort("Empty params! #{params}") if params.empty?
-    firebase.push( 'events', params )
+    fb_push_event(params)
   end
 
   def fetch(event_key:)
     puts "FETCH: EVENT_KEY: #{event_key}" if DEBUG
-    firebase.get("events/#{event_key}")
+    fb_fetch_event(event_key)
   end
 
   private
+
+  def fb_fetch_event(event_key)
+    suppress_output { firebase.get("events/#{event_key}") }
+  end
+
+  def fb_push_event(params)
+    suppress_output { firebase.push( 'events', params ) }
+  end
+
+  def fb_search(path)
+    suppress_output { `curl #{path}` }
+  end
+
+  def suppress_output
+    print ' '
+    original_stdout, original_stderr = $stdout.clone, $stderr.clone
+    $stderr.reopen File.new('/dev/null', 'w')
+    $stdout.reopen File.new('/dev/null', 'w')
+    yield
+  ensure
+    $stdout.reopen original_stdout
+    $stderr.reopen original_stderr
+  end
 
   def rest_request(params)
     base = url_with_auth
