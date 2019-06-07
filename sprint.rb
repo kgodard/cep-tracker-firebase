@@ -21,7 +21,7 @@ class Sprint
 
   def finished_points
     stories.inject(0.0) do |sum, story|
-      sum += story.points
+      sum += story.points.to_f
     end.round(2)
   end
 
@@ -44,23 +44,16 @@ private
     sprint_events.count {|e| e['event'] == 'reject'}
   end
 
+  # TODO:
+  # add a way to dynamically filter the report, i.e. include all backlogs, include psis, etc.
   def get_stories_for_finished_events
     uniq_finished_events.map do |event|
-      story_events = get_all_events_for(tracker_id: event['tracker_id'])
       Story.new(
-        events: story_events,
-        developer: event['dev_name'],
+        event: event,
+        firebase_event: firebase_event,
         sprint_start_seconds: sprint_start_seconds
       )
-    end
-  end
-
-  def get_all_events_for(tracker_id:)
-    params = {
-      orderBy: '"tracker_id"',
-      equalTo: "\"#{tracker_id}\""
-    }
-    firebase_event.search(params: params)
+    end.reject {|story| story.type == "Production Support Incident"}
   end
 
   def get_uniq_finished_events
