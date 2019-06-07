@@ -131,6 +131,9 @@ class CepTracker
       end
     end
 
+    # reset event if it's not a valid next event
+    validate_event
+
     while options.event.nil? && no_other_options?
       puts
       puts "Event type required."
@@ -335,6 +338,23 @@ class CepTracker
 
 private
 
+  def validate_event
+    return if options.event.nil?
+    unless event_allowed_next?(options.event)
+      invalid_event_message
+      options.event = nil
+    end
+  end
+
+  def invalid_event_message
+    puts
+    if last_fb_event.nil?
+      puts " !! You must register a [start] event for this story."
+    else
+      puts " !! Sorry, [#{options.event}] is not a valid event following a [#{last_fb_event}] event."
+    end
+  end
+
   def event_allowed_next?(event)
     if last_fb_event.nil?
       event == :start ? true : false
@@ -366,10 +386,12 @@ private
   end
 
   def set_story_points
-    if options.event == 'start' && ads_story
-      unless ads_story.points.to_s.strip.empty?
+    if options.event == 'start'
+      if ads_story && !ads_story.points.to_s.strip.empty?
         options.points = ads_story.points
       end
+    else
+      options.points = nil
     end
   end
 
