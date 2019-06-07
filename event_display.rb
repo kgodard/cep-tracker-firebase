@@ -46,9 +46,9 @@ class EventDisplay
 
   def point_display_for(event)
     unless event['points'].nil?
-      ("points: #{event['points']}").ljust(11)
+      ("points: #{event['points']}").ljust(13)
     else
-      ''.ljust(11)
+      ''.ljust(13)
     end
   end
 

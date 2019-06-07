@@ -16,7 +16,6 @@ class AdsStoryDisplay
     puts rule
     puts "State: #{ads_story.state} | Points: #{ads_story.points}"
     puts rule
-    puts
   end
 
   private

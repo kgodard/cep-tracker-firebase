@@ -145,8 +145,7 @@ private
     tags.to_s + "; #{tag}"
   end
 
-  def load_story(json)
-    az_story = json
+  def load_story(az_story)
     if az_story.empty?
       raise "ADS story #{id} was not found!"
     else
@@ -189,8 +188,7 @@ private
   end
 
   def az_fetch
-   response = `az boards work-item show --id #{id}` 
+   response = `az boards work-item show --id #{id}`
    JSON.parse(response) rescue {}
   end
-
 end
