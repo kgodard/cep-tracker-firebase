@@ -98,6 +98,10 @@ class CepTracker
         options.comment = comment
       end
 
+      parser.on("-o", "--open", "open ADS story in default browser") do
+        options.open = true
+      end
+
       parser.separator ""
       parser.separator "Common options:"
 
@@ -115,6 +119,10 @@ class CepTracker
 
   def no_comment?
     options.comment.nil?
+  end
+
+  def no_open?
+    options.open != true
   end
 
   def get_inputs
@@ -142,7 +150,7 @@ class CepTracker
     # reset event if it's not a valid next event
     validate_event
 
-    while options.event.nil? && no_other_options? && no_comment?
+    while options.event.nil? && no_other_options? && no_comment? && no_open?
       puts
       puts "Event type required."
       puts
@@ -247,6 +255,7 @@ class CepTracker
       else
         ads_story.add_comment(options.comment) unless options.comment.nil?
       end
+      ads_story.open if options.open
     end
   end
 
@@ -298,6 +307,7 @@ class CepTracker
       puts
       puts "Added comment to ADS story ##{options.tracker_id}"
       puts
+    elsif options.tracker_id && options.open
     else
       puts "No action: missing required options!"
     end
