@@ -74,11 +74,11 @@ class CepTracker
         options.reason = reason
       end
 
-      parser.on("-d", "--timestamp TIMESTAMP", "specify timestamp (other than now) to use for event, ex: '2016-04-12 14:01:00'") do |timestamp|
+      parser.on("-d", "--timestamp TIMESTAMP", "specify timestamp to use for event, ex: '2016-04-12 14:01:00'") do |timestamp|
         options.timestamp = timestamp
       end
 
-      parser.on("-s", "--since DATE", "specify a date to use as a start date to retrieve events from, ex: '2016-04-12'") do |since|
+      parser.on("-s", "--since DATE", "specify a since date to retrieve events from, ex: '2016-04-12'") do |since|
         options.since = since
       end
 
@@ -86,11 +86,11 @@ class CepTracker
         options.search_id = search_id
       end
 
-      parser.on("-k", "--sprint_end DATE", "specify a date to use as a sprint_end date to report on a (2-week) sprint, ex: '2016-04-12'") do |sprint_end|
+      parser.on("-k", "--sprint_end DATE", "specify sprint_end date for 2-week sprint report, ex: '2016-04-12'") do |sprint_end|
         options.sprint_end = sprint_end
       end
 
-      parser.on("-z", "--last NUMBER", "specify a number of events (counting backwards in time) to display, ex: 20") do |last|
+      parser.on("-z", "--last NUMBER", "specify number of events (counting backwards in time) to display, ex: 20") do |last|
         options.last = last
       end
 
@@ -98,7 +98,7 @@ class CepTracker
         options.comment = comment
       end
 
-      parser.on("-o", "--open", "open ADS story in default browser") do
+      parser.on("-o", "--open", "open ADS story in default browser (requires --tracker option)") do
         options.open = true
       end
 
