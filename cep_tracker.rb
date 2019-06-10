@@ -168,7 +168,6 @@ class CepTracker
 
     while options.event == 'start' && options.points.nil?
       print "How many points? "
-      puts
       points = STDIN.gets.chomp
       if valid_points?(points)
         options.points = points
@@ -364,9 +363,12 @@ private
 
   def validate_event
     return if options.event.nil?
-    unless event_allowed_next?(options.event)
+    if event_allowed_next?(options.event)
+      true
+    else
       invalid_event_message
       options.event = nil
+      false
     end
   end
 
