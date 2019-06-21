@@ -90,6 +90,10 @@ class CepTracker
         options.sprint_end = sprint_end
       end
 
+      parser.on("-x", "--filter FILTER", "filter sprint end results by story attr (requires --sprint_end option), ex: 'area=DemGray'") do |filter|
+        options.filter = filter
+      end
+
       parser.on("-z", "--last NUMBER", "specify number of events (counting backwards in time) to display, ex: 20") do |last|
         options.last = last
       end
@@ -200,8 +204,8 @@ class CepTracker
   end
 
   def perform_sprint_end
-    sprint = Sprint.new(sprint_end: options.sprint_end, firebase_event: firebase_event)
-    SprintDisplay.new( sprint: sprint).render
+    sprint = Sprint.new(sprint_end: options.sprint_end, firebase_event: firebase_event, filter: options.filter)
+    SprintDisplay.new(sprint: sprint).render
   end
 
   def perform_since

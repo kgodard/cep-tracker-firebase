@@ -1,7 +1,7 @@
 class ScriptOptions
   attr_accessor :tracker_id, :points, :event, :reason,
     :extended_reason, :timestamp, :last, :since, :sprint_end,
-    :search_id, :comment, :open
+    :search_id, :comment, :open, :filter
 
   def initialize
     @tracker_id      = nil
@@ -16,6 +16,7 @@ class ScriptOptions
     @sprint_end      = nil
     @comment         = nil
     @open            = nil
+    @filter          = nil
   end
 end
 

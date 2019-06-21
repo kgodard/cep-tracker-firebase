@@ -1,10 +1,13 @@
 # contains all finished stories for a given sprint
 class Sprint
-  attr_reader :sprint_end, :firebase_event, :sprint_events, :uniq_finished_events, :stories, :rejected_event_count
+  attr_reader :sprint_end, :firebase_event, :sprint_events,
+    :uniq_finished_events, :stories, :rejected_event_count,
+    :filters
 
-  def initialize(sprint_end:, firebase_event:)
+  def initialize(sprint_end:, firebase_event:, filter: nil)
     @sprint_end           = sprint_end
     @firebase_event       = firebase_event
+    @filters              = parse_story_filters(filter)
     @sprint_events        = fetch_sprint_events
     @uniq_finished_events = get_uniq_finished_events
     @stories              = get_stories_for_finished_events
@@ -44,16 +47,40 @@ private
     sprint_events.count {|e| e['event'] == 'reject'}
   end
 
-  # TODO:
-  # add a way to dynamically filter the report, i.e. include all backlogs, include psis, etc.
   def get_stories_for_finished_events
-    uniq_finished_events.map do |event|
+    unfiltered_stories = uniq_finished_events.map do |event|
       Story.new(
         event: event,
         firebase_event: firebase_event,
         sprint_start_seconds: sprint_start_seconds
       )
-    end.reject {|story| story.type == "Production Support Incident"}
+    end.reject do |story|
+      story.type == "Production Support Incident"
+    end
+    filter_stories(unfiltered_stories)
+  end
+
+  def filter_stories(unfiltered_stories)
+    unfiltered_stories.reject do |story|
+      filter_story?(story)
+    end
+  end
+
+  def filter_story?(story)
+    filters.each do |filter|
+      return true if story.send(filter.first) == filter.last
+    end
+    false
+  end
+
+  def parse_story_filters(str)
+    filters = []
+    return [] if str.nil?
+    str.split(/,/).each do |f|
+      k,v = f.split(/=/)
+      filters << [ k.to_sym, v ]
+    end
+    filters
   end
 
   def get_uniq_finished_events
