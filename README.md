@@ -43,13 +43,17 @@ This allows us to track our "rejection rate".
 
 If you _re-start_ a rejected story, register a __restart__ event for it.
 
-### Pause/Play (optional events that won't be used in standard reporting)
-Lastly, "pause" and "play". These are totally optional. If you want to get super-granular about tracking your time, you can use __pause__ and __play__ to briefly halt your story progress for small delays, like context-switching because of interruptions, etc. Note that I DON'T plan to include these events for our standard sprint reporting, and these events would only be taken into account if/when we start doing some other types of reporting besides our standard three (velocity, rejection rate, cycle time).
-
 ## Feedback
 If you have questions, comments, concerns, let me know -- this thing is really an experiment, and it's definitely a work in progress.
 
 ## Contributions 
 Feel free to add enhancements and/or fix bugs in __CTF__ -- just let everyone know if you want to add a feature so that we can generally agree on it,
 and let everyone know when you've pushed up changes to the master branch so we can `git pull`!
+
+## Smoke tests
+- start: can only register a start for first event, cannot do following any event
+- assigns points from ADS to event if start
+- start, stop, resume, block, resume, finish, reject, restart, finish
+- find, since, -z, comment, open
+- sprint end with/without filters
 
