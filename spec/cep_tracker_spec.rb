@@ -28,12 +28,13 @@ describe CepTracker do
 
   let(:story_id) { "1234567" }
   let(:story_points) { 1.1 }
+  let(:story_title) { "Double" }
 
   let(:ads_story_double) {
     double("ads_story",
            type: "Double",
            id: story_id,
-           title: "Double",
+           title: story_title,
            tags: "Tags",
            state: "New",
            points: story_points
@@ -53,17 +54,92 @@ describe CepTracker do
   before do
     allow_any_instance_of(CepTracker).to receive(:load_local_settings).and_return(local_settings)
     allow_any_instance_of(CepTracker).to receive(:perform_ads_story_action)
-    allow_any_instance_of(CepTracker).to receive(:perform_firebase_action)
     allow(AdsStory).to receive(:new).with(id: story_id).and_return(ads_story_double)
   end
 
   subject { CepTracker.new(args) }
 
+  describe "-z (last n events)" do
+    let(:num_of_events) { "5" }
+    let(:args) { ["-z", num_of_events] }
+    let(:fb_event_name) { 'start' }
+
+    before do
+      allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([fb_event])
+    end
+
+    it "outputs the correct title" do
+      expect { subject }.to output(/Here are the last #{num_of_events} events/).to_stdout
+    end
+
+    it "outputs the one event" do
+      expect { subject }.to output(/#{story_id}/).to_stdout
+    end
+
+    context "with no events" do
+      before do
+        allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([])
+      end
+
+      it "outputs no events" do
+        expect { subject }.to_not output(/#{story_id}/).to_stdout
+      end
+    end
+  end
+
+  describe "-s (since)" do
+    let(:since_date) { Time.at(Time.now - 4 * day).strftime("%Y-%m-%d") }
+    let(:args) { ["-s", since_date] }
+    let(:fb_event_name) { 'start' }
+
+    before do
+      allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([fb_event])
+    end
+
+    it "outputs the correct title" do
+      expect { subject }.to output(/Here are the events since #{since_date}/).to_stdout
+    end
+
+    it "outputs the one event" do
+      expect { subject }.to output(/#{story_id}/).to_stdout
+    end
+
+    context "with no events" do
+      before do
+        allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([])
+      end
+
+      it "outputs no events" do
+        expect { subject }.to_not output(/#{story_id}/).to_stdout
+      end
+    end
+  end
+
+  describe "-f (find)" do
+    let(:args) { ["-f", story_id] }
+    let(:fb_event_name) { 'start' }
+
+    before do
+      allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([fb_event])
+    end
+
+    it "outputs existing ads story" do
+      expect { subject }.to output(/#{story_title}/).to_stdout
+    end
+
+    it "outputs existing firebase events" do
+      expect { subject }.to output(/Events for story id: #{story_id}/).to_stdout
+    end
+  end
+
   describe "registering events" do
     let(:args) { ["-t", story_id, "-e", event_name] }
 
-    describe "when no previous events exist" do
+    before do
+      allow_any_instance_of(CepTracker).to receive(:perform_firebase_action)
+    end
 
+    describe "when no previous events exist" do
       before do
         allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([])
       end
@@ -85,148 +161,150 @@ describe CepTracker do
         end
       end
     end
+  end
 
-    describe "next events" do
+  describe "next events" do
+    let(:args) { ["-t", story_id, "-e", event_name] }
 
-      before do
-        allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([fb_event])
-        allow(STDIN).to receive(:gets).and_return(double("stdin", chomp: prompt_number))
+    before do
+      allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([fb_event])
+      allow_any_instance_of(CepTracker).to receive(:perform_firebase_action)
+      allow(STDIN).to receive(:gets).and_return(double("stdin", chomp: prompt_number))
+    end
+
+    shared_examples "allowed" do |event_name|
+      let(:event_name) { event_name }
+      specify { expect { subject }.to_not output(/Event type required/).to_stdout }
+    end
+
+    shared_examples "NOT allowed" do |event_name|
+      let(:event_name) { event_name }
+      specify { expect { subject }.to output(/not a valid event/).to_stdout }
+    end
+
+    context "after 'start'" do
+      let(:fb_event_name) { 'start' }
+      let(:prompt_number) { 2 }
+
+      describe "allowed events" do
+        it_behaves_like "allowed", "finish"
+        it_behaves_like "allowed", "stop"
+        it_behaves_like "allowed", "block"
       end
 
-      shared_examples "allowed" do |event_name|
-        let(:event_name) { event_name }
-        specify { expect { subject }.to_not output(/Event type required/).to_stdout }
+      describe "NOT allowed events" do
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "resume"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "reject"
+      end
+    end
+
+    context "after 'finish'" do
+      let(:fb_event_name) { 'finish' }
+      let(:prompt_number) { 7 }
+
+      describe "allowed events" do
+        it_behaves_like "allowed", "reject"
       end
 
-      shared_examples "NOT allowed" do |event_name|
-        let(:event_name) { event_name }
-        specify { expect { subject }.to output(/not a valid event/).to_stdout }
+      describe "NOT allowed events" do
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "resume"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "stop"
+        it_behaves_like "NOT allowed", "block"
+        it_behaves_like "NOT allowed", "finish"
+      end
+    end
+
+    context "after 'resume'" do
+      let(:fb_event_name) { 'resume' }
+      let(:prompt_number) { 2 }
+
+      describe "allowed events" do
+        it_behaves_like "allowed", "finish"
+        it_behaves_like "allowed", "stop"
+        it_behaves_like "allowed", "block"
       end
 
-      context "after 'start'" do
-        let(:fb_event_name) { 'start' }
-        let(:prompt_number) { 2 }
+      describe "NOT allowed events" do
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "resume"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "reject"
+      end
+    end
 
-        describe "allowed events" do
-          it_behaves_like "allowed", "finish"
-          it_behaves_like "allowed", "stop"
-          it_behaves_like "allowed", "block"
-        end
+    context "after 'restart'" do
+      let(:fb_event_name) { 'restart' }
+      let(:prompt_number) { 2 }
 
-        describe "NOT allowed events" do
-          it_behaves_like "NOT allowed", "start"
-          it_behaves_like "NOT allowed", "resume"
-          it_behaves_like "NOT allowed", "restart"
-          it_behaves_like "NOT allowed", "reject"
-        end
+      describe "allowed events" do
+        it_behaves_like "allowed", "finish"
+        it_behaves_like "allowed", "stop"
+        it_behaves_like "allowed", "block"
       end
 
-      context "after 'finish'" do
-        let(:fb_event_name) { 'finish' }
-        let(:prompt_number) { 7 }
+      describe "NOT allowed events" do
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "resume"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "reject"
+      end
+    end
 
-        describe "allowed events" do
-          it_behaves_like "allowed", "reject"
-        end
+    context "after 'stop'" do
+      let(:fb_event_name) { 'stop' }
+      let(:prompt_number) { 3 }
 
-        describe "NOT allowed events" do
-          it_behaves_like "NOT allowed", "start"
-          it_behaves_like "NOT allowed", "resume"
-          it_behaves_like "NOT allowed", "restart"
-          it_behaves_like "NOT allowed", "stop"
-          it_behaves_like "NOT allowed", "block"
-          it_behaves_like "NOT allowed", "finish"
-        end
+      describe "allowed events" do
+        it_behaves_like "allowed", "resume"
       end
 
-      context "after 'resume'" do
-        let(:fb_event_name) { 'resume' }
-        let(:prompt_number) { 2 }
+      describe "NOT allowed events" do
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "reject"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "stop"
+        it_behaves_like "NOT allowed", "block"
+        it_behaves_like "NOT allowed", "finish"
+      end
+    end
 
-        describe "allowed events" do
-          it_behaves_like "allowed", "finish"
-          it_behaves_like "allowed", "stop"
-          it_behaves_like "allowed", "block"
-        end
+    context "after 'block'" do
+      let(:fb_event_name) { 'block' }
+      let(:prompt_number) { 3 }
 
-        describe "NOT allowed events" do
-          it_behaves_like "NOT allowed", "start"
-          it_behaves_like "NOT allowed", "resume"
-          it_behaves_like "NOT allowed", "restart"
-          it_behaves_like "NOT allowed", "reject"
-        end
+      describe "allowed events" do
+        it_behaves_like "allowed", "resume"
       end
 
-      context "after 'restart'" do
-        let(:fb_event_name) { 'restart' }
-        let(:prompt_number) { 2 }
+      describe "NOT allowed events" do
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "reject"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "stop"
+        it_behaves_like "NOT allowed", "block"
+        it_behaves_like "NOT allowed", "finish"
+      end
+    end
 
-        describe "allowed events" do
-          it_behaves_like "allowed", "finish"
-          it_behaves_like "allowed", "stop"
-          it_behaves_like "allowed", "block"
-        end
+    context "after 'reject'" do
+      let(:fb_event_name) { 'reject' }
+      let(:prompt_number) { 4 }
 
-        describe "NOT allowed events" do
-          it_behaves_like "NOT allowed", "start"
-          it_behaves_like "NOT allowed", "resume"
-          it_behaves_like "NOT allowed", "restart"
-          it_behaves_like "NOT allowed", "reject"
-        end
+      describe "allowed events" do
+        it_behaves_like "allowed", "restart"
       end
 
-      context "after 'stop'" do
-        let(:fb_event_name) { 'stop' }
-        let(:prompt_number) { 3 }
-
-        describe "allowed events" do
-          it_behaves_like "allowed", "resume"
-        end
-
-        describe "NOT allowed events" do
-          it_behaves_like "NOT allowed", "start"
-          it_behaves_like "NOT allowed", "reject"
-          it_behaves_like "NOT allowed", "restart"
-          it_behaves_like "NOT allowed", "stop"
-          it_behaves_like "NOT allowed", "block"
-          it_behaves_like "NOT allowed", "finish"
-        end
-      end
-
-      context "after 'block'" do
-        let(:fb_event_name) { 'block' }
-        let(:prompt_number) { 3 }
-
-        describe "allowed events" do
-          it_behaves_like "allowed", "resume"
-        end
-
-        describe "NOT allowed events" do
-          it_behaves_like "NOT allowed", "start"
-          it_behaves_like "NOT allowed", "reject"
-          it_behaves_like "NOT allowed", "restart"
-          it_behaves_like "NOT allowed", "stop"
-          it_behaves_like "NOT allowed", "block"
-          it_behaves_like "NOT allowed", "finish"
-        end
-      end
-
-      context "after 'reject'" do
-        let(:fb_event_name) { 'reject' }
-        let(:prompt_number) { 4 }
-
-        describe "allowed events" do
-          it_behaves_like "allowed", "restart"
-        end
-
-        describe "NOT allowed events" do
-          it_behaves_like "NOT allowed", "start"
-          it_behaves_like "NOT allowed", "reject"
-          it_behaves_like "NOT allowed", "resume"
-          it_behaves_like "NOT allowed", "stop"
-          it_behaves_like "NOT allowed", "block"
-          it_behaves_like "NOT allowed", "finish"
-        end
+      describe "NOT allowed events" do
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "reject"
+        it_behaves_like "NOT allowed", "resume"
+        it_behaves_like "NOT allowed", "stop"
+        it_behaves_like "NOT allowed", "block"
+        it_behaves_like "NOT allowed", "finish"
       end
     end
   end
