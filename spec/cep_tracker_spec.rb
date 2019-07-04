@@ -29,6 +29,7 @@ describe CepTracker do
   let(:story_id) { "1234567" }
   let(:story_points) { 1.1 }
   let(:story_title) { "Double" }
+  let(:fb_event_name) { 'start' }
 
   let(:ads_story_double) {
     double("ads_story",
@@ -53,16 +54,40 @@ describe CepTracker do
 
   before do
     allow_any_instance_of(CepTracker).to receive(:load_local_settings).and_return(local_settings)
-    allow_any_instance_of(CepTracker).to receive(:perform_ads_story_action)
     allow(AdsStory).to receive(:new).with(id: story_id).and_return(ads_story_double)
   end
 
   subject { CepTracker.new(args) }
 
+  describe "-c (comment)" do
+    let(:comment) { "my comment" }
+
+    before do
+      allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([])
+      expect(ads_story_double).to receive(:add_comment).with(comment)
+    end
+
+    context "with tracker id provided" do
+      let(:args) { ["-c", comment, "-t", story_id] }
+
+      it "sends comment to ads_story" do
+        expect { subject }.to output(/Added comment/).to_stdout
+      end
+    end
+
+    context "without tracker id" do
+      let(:args) { ["-c", comment] }
+
+      it "prompts for id and sends comment to ads_story" do
+        allow(STDIN).to receive(:gets).and_return(double("stdin", chomp: story_id))
+        expect { subject }.to output(/Added comment/).to_stdout
+      end
+    end
+  end
+
   describe "-z (last n events)" do
     let(:num_of_events) { "5" }
     let(:args) { ["-z", num_of_events] }
-    let(:fb_event_name) { 'start' }
 
     before do
       allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([fb_event])
@@ -90,7 +115,6 @@ describe CepTracker do
   describe "-s (since)" do
     let(:since_date) { Time.at(Time.now - 4 * day).strftime("%Y-%m-%d") }
     let(:args) { ["-s", since_date] }
-    let(:fb_event_name) { 'start' }
 
     before do
       allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([fb_event])
@@ -117,7 +141,6 @@ describe CepTracker do
 
   describe "-f (find)" do
     let(:args) { ["-f", story_id] }
-    let(:fb_event_name) { 'start' }
 
     before do
       allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([fb_event])
@@ -137,6 +160,7 @@ describe CepTracker do
 
     before do
       allow_any_instance_of(CepTracker).to receive(:perform_firebase_action)
+      allow_any_instance_of(CepTracker).to receive(:perform_ads_story_action)
     end
 
     describe "when no previous events exist" do
@@ -169,6 +193,7 @@ describe CepTracker do
     before do
       allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([fb_event])
       allow_any_instance_of(CepTracker).to receive(:perform_firebase_action)
+      allow_any_instance_of(CepTracker).to receive(:perform_ads_story_action)
       allow(STDIN).to receive(:gets).and_return(double("stdin", chomp: prompt_number))
     end
 
@@ -183,7 +208,6 @@ describe CepTracker do
     end
 
     context "after 'start'" do
-      let(:fb_event_name) { 'start' }
       let(:prompt_number) { 2 }
 
       describe "allowed events" do
