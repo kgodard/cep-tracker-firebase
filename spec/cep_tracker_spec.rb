@@ -59,6 +59,30 @@ describe CepTracker do
 
   subject { CepTracker.new(args) }
 
+  describe "-o (open)" do
+    before do
+      allow_any_instance_of(FirebaseEvent).to receive(:search).and_return([])
+      expect(ads_story_double).to receive(:open).and_return(true)
+    end
+
+    context "with tracker id provided" do
+      let(:args) { ["-o", "-t", story_id] }
+
+      it "sends 'open' to ads_story" do
+        expect { subject }.to output(/#{story_title}/).to_stdout
+      end
+    end
+
+    context "without tracker id" do
+      let(:args) { ["-o"] }
+
+      it "prompts for id and sends 'open' to ads_story" do
+        allow(STDIN).to receive(:gets).and_return(double("stdin", chomp: story_id))
+        expect { subject }.to output(/#{story_title}/).to_stdout
+      end
+    end
+  end
+
   describe "-c (comment)" do
     let(:comment) { "my comment" }
 
