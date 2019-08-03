@@ -14,7 +14,8 @@ require_relative '../sprint_display.rb'
 require_relative '../cep_tracker.rb'
 
 describe CepTracker do
-  let(:day) { 24 * 3600 }
+  let(:hour)            { 3600 }
+  let(:day)             { 24 * hour }
   let(:dev_name)        { "Person" }
   let(:firebase_uri)    {"https://abcdef.edu"}
   let(:firebase_secret) {"seekrit"}
@@ -38,7 +39,22 @@ describe CepTracker do
            title: story_title,
            tags: "Tags",
            state: "New",
-           points: story_points
+           points: story_points,
+           area: "Area1",
+           iteration: "Iteration1"
+          )
+  }
+
+  let(:ads_story_double_2) {
+    double("ads_story",
+           type: "Double 2",
+           id: fb_id_2,
+           title: story_title,
+           tags: "Tags",
+           state: "New",
+           points: story_points,
+           area: "Area2",
+           iteration: "Iteration2"
           )
   }
 
@@ -52,12 +68,99 @@ describe CepTracker do
     }
   }
 
+  let(:fb_id_1) { "1111111" }
+  let(:fb_id_2) { "2222222" }
+
+  let(:fb_events) {
+    [
+      {
+        "tracker_id" =>  fb_id_1,
+        "points" =>      1,
+        "dev_name" =>    "Dev One",
+        "event" =>       "start",
+        "created_at" =>  (Time.now - 3 * day).to_i
+      },
+      {
+        "tracker_id" =>  fb_id_1,
+        "dev_name" =>    "Dev One",
+        "event" =>       "finish",
+        "created_at" =>  (Time.now - 1 * day).to_i
+      },
+      {
+        "tracker_id" =>  fb_id_2,
+        "points" =>      2,
+        "dev_name" =>    "Dev Two",
+        "event" =>       "start",
+        "created_at" =>  (Time.now - 5 * day).to_i
+      },
+      {
+        "tracker_id" =>  fb_id_2,
+        "dev_name" =>    "Dev Two",
+        "event" =>       "finish",
+        "created_at" =>  (Time.now - 2 * day).to_i
+      },
+      {
+        "tracker_id" =>  "3333333",
+        "points" =>      3,
+        "dev_name" =>    "Dev Three",
+        "event" =>       "start",
+        "created_at" =>  (Time.now - 3 * day).to_i
+      }
+    ]
+  }
+
   before do
     allow_any_instance_of(CepTracker).to receive(:load_local_settings).and_return(local_settings)
     allow(AdsStory).to receive(:new).with(id: story_id).and_return(ads_story_double)
   end
 
   subject { CepTracker.new(args) }
+
+  describe "-k (sprint end)" do
+    let(:args) { ["-k", '2000-09-09'] }
+
+    before do
+      allow_any_instance_of(FirebaseEvent).to receive(:search).and_return(fb_events)
+      allow(AdsStory).to receive(:new).with(id: fb_id_1).and_return(ads_story_double)
+      allow(AdsStory).to receive(:new).with(id: fb_id_2).and_return(ads_story_double_2)
+    end
+
+    it "calculates finished points" do
+      expect { subject }.to output(/Finished Points:\s+3\.0/).to_stdout
+    end
+
+    it "calculates avg points per dev" do
+      expect { subject }.to output(/Avg Points Per Dev:\s+1\.5/).to_stdout
+    end
+
+    it "calculates avg cycle hours" do
+      expect { subject }.to output(/Avg Cycle Hours:\s+60\.0/).to_stdout
+    end
+
+    it "calculates rejection rate" do
+      expect { subject }.to output(/Rejection \%:\s+0/).to_stdout
+    end
+
+    context "with filter specified" do
+      let(:args) { ["-k", '2000-09-09', "-x", "area=Area2"] }
+
+      it "calculates finished points" do
+        expect { subject }.to output(/Finished Points:\s+1\.0/).to_stdout
+      end
+
+      it "calculates avg points per dev" do
+        expect { subject }.to output(/Avg Points Per Dev:\s+1\.0/).to_stdout
+      end
+
+      it "calculates avg cycle hours" do
+        expect { subject }.to output(/Avg Cycle Hours:\s+48\.0/).to_stdout
+      end
+
+      it "calculates rejection rate" do
+        expect { subject }.to output(/Rejection \%:\s+0/).to_stdout
+      end
+    end
+  end
 
   describe "-o (open)" do
     before do
