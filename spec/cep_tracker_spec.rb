@@ -116,21 +116,6 @@ describe CepTracker do
 
   subject { CepTracker.new(args) }
 
-  describe "-v (velocity)" do
-    let(:args) { ["-v", (Time.now + 3600*24).strftime("%Y-%m-%d")] }
-    let(:expected_velocity) { 1.0 }
-
-    before do
-      allow_any_instance_of(FirebaseEvent).to receive(:search).and_return(fb_events)
-      allow(AdsStory).to receive(:new).with(id: fb_id_1).and_return(ads_story_double)
-      allow(AdsStory).to receive(:new).with(id: fb_id_2).and_return(ads_story_double_2)
-    end
-
-    it "calculates average team velocity for prior 3 sprints (6 weeks)" do
-      expect { subject }.to output(/Avg Team Velocity:\s+#{expected_velocity}/).to_stdout
-    end
-  end
-
   describe "-k (sprint end)" do
     let(:args) { ["-k", '2000-09-09'] }
 
@@ -142,6 +127,10 @@ describe CepTracker do
 
     it "calculates finished points" do
       expect { subject }.to output(/Finished Points:\s+3\.0/).to_stdout
+    end
+
+    it "displays number of contributors" do
+      expect { subject }.to output(/Number of Contributors:\s+2/).to_stdout
     end
 
     it "calculates avg points per dev" do
@@ -156,11 +145,23 @@ describe CepTracker do
       expect { subject }.to output(/Rejection \%:\s+0/).to_stdout
     end
 
+    it "does NOT display number of sprints" do
+      expect { subject }.to_not output(/Number of Sprints/).to_stdout
+    end
+
+    it "does NOT display team velocity" do
+      expect { subject }.to_not output(/Avg Team Velocity/).to_stdout
+    end
+
     context "with filter specified" do
       let(:args) { ["-k", '2000-09-09', "-x", "area=Area2"] }
 
       it "calculates finished points" do
         expect { subject }.to output(/Finished Points:\s+1\.0/).to_stdout
+      end
+
+      it "displays number of contributors" do
+        expect { subject }.to output(/Number of Contributors:\s+1/).to_stdout
       end
 
       it "calculates avg points per dev" do
@@ -169,6 +170,40 @@ describe CepTracker do
 
       it "calculates avg cycle hours" do
         expect { subject }.to output(/Avg Cycle Hours:\s+48\.0/).to_stdout
+      end
+
+      it "calculates rejection rate" do
+        expect { subject }.to output(/Rejection \%:\s+0/).to_stdout
+      end
+    end
+
+    context "with number of sprints specified" do
+      let(:num_sprints) { "3" }
+      let(:args) { ["-k", (Time.now + 3600*24).strftime("%Y-%m-%d"), "-n", num_sprints] }
+      let(:expected_velocity) { 1.0 }
+
+      it "calculates finished points" do
+        expect { subject }.to output(/Finished Points:\s+3\.0/).to_stdout
+      end
+
+      it "displays number of sprints" do
+        expect { subject }.to output(/Number of Sprints:\s+#{num_sprints}/).to_stdout
+      end
+
+      it "calculates average team velocity for prior 3 sprints (6 weeks)" do
+        expect { subject }.to output(/Avg Team Velocity:\s+#{expected_velocity}/).to_stdout
+      end
+
+      it "displays number of contributors" do
+        expect { subject }.to output(/Number of Contributors:\s+2/).to_stdout
+      end
+
+      it "calculates avg points per dev" do
+        expect { subject }.to output(/Avg Points Per Dev:\s+1\.5/).to_stdout
+      end
+
+      it "calculates avg cycle hours" do
+        expect { subject }.to output(/Avg Cycle Hours:\s+60\.0/).to_stdout
       end
 
       it "calculates rejection rate" do

@@ -58,28 +58,16 @@ class CepTracker
       parser.separator "Specific options:"
 
       # additional options
-      parser.on("-t", "--tracker TRACKERID", "specify story id") do |tracker_id|
-        set_tracker_id(tracker_id)
-      end
-
-      parser.on("-p", "--points POINTS", "specify story points") do |points|
-        options.points = points
-      end
-
-      parser.on("-e", "--event EVENT", "specify event, ex: 'start'") do |event|
-        set_event(event)
-      end
-
-      parser.on("-r", "--reason REASON", "specify reason, ex: BUG") do |reason|
-        options.reason = reason
+      parser.on("-c", "--comment COMMENT", "add a comment to ADS story (no event created), ex: 'I am Groot'") do |comment|
+        options.comment = comment
       end
 
       parser.on("-d", "--timestamp TIMESTAMP", "specify timestamp to use for event, ex: '2016-04-12 14:01:00'") do |timestamp|
         options.timestamp = timestamp
       end
 
-      parser.on("-s", "--since DATE", "specify a since date to retrieve events from, ex: '2016-04-12'") do |since|
-        options.since = since
+      parser.on("-e", "--event EVENT", "specify event, ex: 'start'") do |event|
+        set_event(event)
       end
 
       parser.on("-f", "--find TRACKERID", "specify a story id to search for its events") do |search_id|
@@ -90,24 +78,36 @@ class CepTracker
         options.sprint_end = sprint_end
       end
 
-      parser.on("-x", "--filter FILTER", "filter sprint end results by story attr (requires --sprint_end option), ex: 'area=DemGray'") do |filter|
-        options.filter = filter
-      end
-
-      parser.on("-z", "--last NUMBER", "specify number of events (counting backwards in time) to display, ex: 20") do |last|
-        options.last = last
-      end
-
-      parser.on("-c", "--comment COMMENT", "add a comment to ADS story (no event created), ex: 'I am Groot'") do |comment|
-        options.comment = comment
+      parser.on("-n", "--number_of_sprints NUMBER", "specify number of sprints to report on (requires --sprint_end option), ex: 3") do |number_of_sprints|
+        options.number_of_sprints = number_of_sprints.to_i
       end
 
       parser.on("-o", "--open", "open ADS story in default browser (requires --tracker option)") do
         options.open = true
       end
 
-      parser.on("-r", "--velocity DATE", "specify sprint_end date for 6-week team velocity, ex: '2016-04-12'") do |velocity_end|
-        options.velocity_end = velocity_end
+      parser.on("-p", "--points POINTS", "specify story points") do |points|
+        options.points = points
+      end
+
+      parser.on("-r", "--reason REASON", "specify reason, ex: BUG") do |reason|
+        options.reason = reason
+      end
+
+      parser.on("-s", "--since DATE", "specify a since date to retrieve events from, ex: '2016-04-12'") do |since|
+        options.since = since
+      end
+
+      parser.on("-t", "--tracker TRACKERID", "specify story id") do |tracker_id|
+        set_tracker_id(tracker_id)
+      end
+
+      parser.on("-x", "--filter FILTER", "filter sprint end results by story attr (requires --sprint_end option), ex: 'area=DemGray'") do |filter|
+        options.filter = filter
+      end
+
+      parser.on("-z", "--last NUMBER", "specify number of events (counting backwards in time) to display, ex: 20") do |last|
+        options.last = last
       end
 
       parser.separator ""
@@ -122,7 +122,7 @@ class CepTracker
   end
 
   def no_other_options?
-    options.last.nil? && options.since.nil? && options.sprint_end.nil? && options.search_id.nil? && options.velocity_end.nil?
+    options.last.nil? && options.since.nil? && options.sprint_end.nil? && options.search_id.nil?
   end
 
   def no_comment?
@@ -207,23 +207,14 @@ class CepTracker
     end
   end
 
-  def perform_velocity
-    increment = Sprint.new(
-      sprint_end: options.velocity_end,
-      firebase_event: firebase_event,
-      filter: options.filter,
-      number_of_sprints: 3
-    )
-    IncrementDisplay.new(increment: increment).render
-  end
-
   def perform_sprint_end
-    sprint = Sprint.new(
+    increment = Sprint.new(
       sprint_end: options.sprint_end,
       firebase_event: firebase_event,
-      filter: options.filter
+      filter: options.filter,
+      number_of_sprints: options.number_of_sprints
     )
-    IncrementDisplay.new(increment: sprint).render
+    IncrementDisplay.new(increment: increment).render
   end
 
   def perform_since
@@ -328,8 +319,6 @@ class CepTracker
       puts
       puts "Added comment to ADS story ##{options.tracker_id}"
       puts
-    elsif !options.velocity_end.nil?
-      perform_velocity
     elsif options.tracker_id && options.open
     else
       puts "No action: missing required options!"
