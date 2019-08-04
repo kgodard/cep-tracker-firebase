@@ -149,17 +149,17 @@ private
     if az_story.empty?
       raise "ADS story #{id} was not found!"
     else
-      @url         = az_story["url"]
-      @area        = az_story["fields"]["System.AreaLevel3"]
-      @iteration   = az_story["fields"]["System.IterationLevel3"]
-      @state       = az_story["fields"]["System.State"]
-      @type        = az_story["fields"]["System.WorkItemType"]
-      @title       = az_story["fields"]["System.Title"]
-      @points      = az_story["fields"]["Microsoft.VSTS.Scheduling.StoryPoints"]
-      @column      = az_story["fields"]["System.BoardColumn"]
-      @tags        = az_story["fields"]["System.Tags"]
-      @history     = az_story["fields"]["System.History"]
-      @description = az_story["fields"]["System.Description"]
+      @url         = az_story["url"] || ""
+      @area        = az_story["fields"]["System.AreaLevel3"] || ""
+      @iteration   = az_story["fields"]["System.IterationLevel3"] || ""
+      @state       = az_story["fields"]["System.State"] || ""
+      @type        = az_story["fields"]["System.WorkItemType"] || ""
+      @title       = az_story["fields"]["System.Title"] || ""
+      @points      = az_story["fields"]["Microsoft.VSTS.Scheduling.StoryPoints"] || ""
+      @column      = az_story["fields"]["System.BoardColumn"] || ""
+      @tags        = az_story["fields"]["System.Tags"] || ""
+      @history     = az_story["fields"]["System.History"] || ""
+      @description = az_story["fields"]["System.Description"] || ""
       return true
     end
   end
