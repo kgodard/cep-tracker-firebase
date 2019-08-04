@@ -2,16 +2,22 @@
 class Sprint
   attr_reader :sprint_end, :firebase_event, :sprint_events,
     :uniq_finished_events, :stories, :rejected_event_count,
-    :filters
+    :filters, :number_of_sprints, :dev_count
 
-  def initialize(sprint_end:, firebase_event:, filter: nil)
+  def initialize(sprint_end:, firebase_event:, filter: nil, number_of_sprints: 1)
     @sprint_end           = sprint_end
     @firebase_event       = firebase_event
     @filters              = parse_story_filters(filter)
+    @number_of_sprints    = number_of_sprints
     @sprint_events        = fetch_sprint_events
     @uniq_finished_events = get_uniq_finished_events
     @stories              = get_stories_for_finished_events
+    @dev_count            = developer_count
     @rejected_event_count = count_rejected_events
+  end
+
+  def average_team_velocity
+    (finished_points /  number_of_sprints).round(2)
   end
 
   def average_cycle_days
@@ -34,7 +40,7 @@ class Sprint
   end
 
   def average_points_per_developer
-    (finished_points / developer_count).round(2)
+    (finished_points / dev_count).round(2)
   end
 
 private
@@ -97,7 +103,7 @@ private
   end
 
   def sprint_length
-    14 * one_day
+    number_of_sprints * 14 * one_day
   end
 
   def sprint_start_seconds

@@ -12,7 +12,7 @@ require './ads_story.rb'
 require './ads_story_display.rb'
 require './firebase_event.rb'
 require './event_display.rb'
-require './sprint_display.rb'
+require './increment_display.rb'
 require './cep_tracker.rb'
 
 CepTracker.new(ARGV)

@@ -106,6 +106,10 @@ class CepTracker
         options.open = true
       end
 
+      parser.on("-r", "--velocity DATE", "specify sprint_end date for 6-week team velocity, ex: '2016-04-12'") do |velocity_end|
+        options.velocity_end = velocity_end
+      end
+
       parser.separator ""
       parser.separator "Common options:"
 
@@ -118,7 +122,7 @@ class CepTracker
   end
 
   def no_other_options?
-    options.last.nil? && options.since.nil? && options.sprint_end.nil? && options.search_id.nil?
+    options.last.nil? && options.since.nil? && options.sprint_end.nil? && options.search_id.nil? && options.velocity_end.nil?
   end
 
   def no_comment?
@@ -203,9 +207,23 @@ class CepTracker
     end
   end
 
+  def perform_velocity
+    increment = Sprint.new(
+      sprint_end: options.velocity_end,
+      firebase_event: firebase_event,
+      filter: options.filter,
+      number_of_sprints: 3
+    )
+    IncrementDisplay.new(increment: increment).render
+  end
+
   def perform_sprint_end
-    sprint = Sprint.new(sprint_end: options.sprint_end, firebase_event: firebase_event, filter: options.filter)
-    SprintDisplay.new(sprint: sprint).render
+    sprint = Sprint.new(
+      sprint_end: options.sprint_end,
+      firebase_event: firebase_event,
+      filter: options.filter
+    )
+    IncrementDisplay.new(increment: sprint).render
   end
 
   def perform_since
@@ -310,6 +328,8 @@ class CepTracker
       puts
       puts "Added comment to ADS story ##{options.tracker_id}"
       puts
+    elsif !options.velocity_end.nil?
+      perform_velocity
     elsif options.tracker_id && options.open
     else
       puts "No action: missing required options!"

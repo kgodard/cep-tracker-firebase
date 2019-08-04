@@ -10,7 +10,7 @@ require_relative '../ads_story.rb'
 require_relative '../ads_story_display.rb'
 require_relative '../firebase_event.rb'
 require_relative '../event_display.rb'
-require_relative '../sprint_display.rb'
+require_relative '../increment_display.rb'
 require_relative '../cep_tracker.rb'
 
 describe CepTracker do
@@ -115,6 +115,21 @@ describe CepTracker do
   end
 
   subject { CepTracker.new(args) }
+
+  describe "-v (velocity)" do
+    let(:args) { ["-v", (Time.now + 3600*24).strftime("%Y-%m-%d")] }
+    let(:expected_velocity) { 1.0 }
+
+    before do
+      allow_any_instance_of(FirebaseEvent).to receive(:search).and_return(fb_events)
+      allow(AdsStory).to receive(:new).with(id: fb_id_1).and_return(ads_story_double)
+      allow(AdsStory).to receive(:new).with(id: fb_id_2).and_return(ads_story_double_2)
+    end
+
+    it "calculates average team velocity for prior 3 sprints (6 weeks)" do
+      expect { subject }.to output(/Avg Team Velocity:\s+#{expected_velocity}/).to_stdout
+    end
+  end
 
   describe "-k (sprint end)" do
     let(:args) { ["-k", '2000-09-09'] }
