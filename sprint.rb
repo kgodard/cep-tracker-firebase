@@ -17,7 +17,7 @@ class Sprint
   end
 
   def average_team_velocity
-    (finished_points /  number_of_sprints).round(2)
+    (finished_points / number_of_sprints).round(2)
   end
 
   def average_cycle_days
