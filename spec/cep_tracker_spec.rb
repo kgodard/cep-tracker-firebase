@@ -199,7 +199,7 @@ describe CepTracker do
       end
 
       it "calculates avg points per dev" do
-        expect { subject }.to output(/Avg Points Per Dev:\s+1\.5/).to_stdout
+        expect { subject }.to output(/Avg Points Per Dev:\s+0\.5/).to_stdout
       end
 
       it "calculates avg cycle hours" do

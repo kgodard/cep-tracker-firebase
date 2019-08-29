@@ -40,7 +40,7 @@ class Sprint
   end
 
   def average_points_per_developer
-    (finished_points / dev_count).round(2)
+    (finished_points / number_of_sprints / dev_count).round(2)
   end
 
 private
