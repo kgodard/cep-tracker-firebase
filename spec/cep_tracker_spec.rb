@@ -388,34 +388,36 @@ describe CepTracker do
       let(:prompt_number) { 2 }
 
       describe "allowed events" do
+        it_behaves_like "allowed", "accept"
+        it_behaves_like "allowed", "block"
         it_behaves_like "allowed", "finish"
         it_behaves_like "allowed", "stop"
-        it_behaves_like "allowed", "block"
       end
 
       describe "NOT allowed events" do
-        it_behaves_like "NOT allowed", "start"
-        it_behaves_like "NOT allowed", "resume"
-        it_behaves_like "NOT allowed", "restart"
         it_behaves_like "NOT allowed", "reject"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "resume"
+        it_behaves_like "NOT allowed", "start"
       end
     end
 
-    context "after 'finish'" do
-      let(:fb_event_name) { 'finish' }
+    context "after 'accept'" do
+      let(:fb_event_name) { 'accept' }
       let(:prompt_number) { 7 }
 
       describe "allowed events" do
+        it_behaves_like "allowed", "finish"
         it_behaves_like "allowed", "reject"
       end
 
       describe "NOT allowed events" do
-        it_behaves_like "NOT allowed", "start"
-        it_behaves_like "NOT allowed", "resume"
-        it_behaves_like "NOT allowed", "restart"
-        it_behaves_like "NOT allowed", "stop"
+        it_behaves_like "NOT allowed", "accept"
         it_behaves_like "NOT allowed", "block"
-        it_behaves_like "NOT allowed", "finish"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "resume"
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "stop"
       end
     end
 
@@ -424,16 +426,17 @@ describe CepTracker do
       let(:prompt_number) { 2 }
 
       describe "allowed events" do
+        it_behaves_like "allowed", "accept"
+        it_behaves_like "allowed", "block"
         it_behaves_like "allowed", "finish"
         it_behaves_like "allowed", "stop"
-        it_behaves_like "allowed", "block"
       end
 
       describe "NOT allowed events" do
-        it_behaves_like "NOT allowed", "start"
-        it_behaves_like "NOT allowed", "resume"
-        it_behaves_like "NOT allowed", "restart"
         it_behaves_like "NOT allowed", "reject"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "resume"
+        it_behaves_like "NOT allowed", "start"
       end
     end
 
@@ -442,70 +445,74 @@ describe CepTracker do
       let(:prompt_number) { 2 }
 
       describe "allowed events" do
+        it_behaves_like "allowed", "accept"
+        it_behaves_like "allowed", "block"
         it_behaves_like "allowed", "finish"
         it_behaves_like "allowed", "stop"
-        it_behaves_like "allowed", "block"
       end
 
       describe "NOT allowed events" do
-        it_behaves_like "NOT allowed", "start"
-        it_behaves_like "NOT allowed", "resume"
-        it_behaves_like "NOT allowed", "restart"
         it_behaves_like "NOT allowed", "reject"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "resume"
+        it_behaves_like "NOT allowed", "start"
       end
     end
 
     context "after 'stop'" do
       let(:fb_event_name) { 'stop' }
-      let(:prompt_number) { 3 }
+      let(:prompt_number) { 4 }
 
       describe "allowed events" do
         it_behaves_like "allowed", "resume"
       end
 
       describe "NOT allowed events" do
-        it_behaves_like "NOT allowed", "start"
-        it_behaves_like "NOT allowed", "reject"
-        it_behaves_like "NOT allowed", "restart"
-        it_behaves_like "NOT allowed", "stop"
+        it_behaves_like "NOT allowed", "accept"
         it_behaves_like "NOT allowed", "block"
         it_behaves_like "NOT allowed", "finish"
+        it_behaves_like "NOT allowed", "reject"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "stop"
       end
     end
 
     context "after 'block'" do
       let(:fb_event_name) { 'block' }
-      let(:prompt_number) { 3 }
+      let(:prompt_number) { 4 }
 
       describe "allowed events" do
         it_behaves_like "allowed", "resume"
       end
 
       describe "NOT allowed events" do
-        it_behaves_like "NOT allowed", "start"
-        it_behaves_like "NOT allowed", "reject"
-        it_behaves_like "NOT allowed", "restart"
-        it_behaves_like "NOT allowed", "stop"
+        it_behaves_like "NOT allowed", "accept"
         it_behaves_like "NOT allowed", "block"
         it_behaves_like "NOT allowed", "finish"
+        it_behaves_like "NOT allowed", "reject"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "stop"
       end
     end
 
     context "after 'reject'" do
       let(:fb_event_name) { 'reject' }
-      let(:prompt_number) { 4 }
+      let(:prompt_number) { 8 }
 
       describe "allowed events" do
         it_behaves_like "allowed", "restart"
       end
 
       describe "NOT allowed events" do
-        it_behaves_like "NOT allowed", "start"
-        it_behaves_like "NOT allowed", "reject"
-        it_behaves_like "NOT allowed", "resume"
-        it_behaves_like "NOT allowed", "stop"
+        it_behaves_like "NOT allowed", "accept"
         it_behaves_like "NOT allowed", "block"
         it_behaves_like "NOT allowed", "finish"
+        it_behaves_like "NOT allowed", "reject"
+        it_behaves_like "NOT allowed", "resume"
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "stop"
       end
     end
   end

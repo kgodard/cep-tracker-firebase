@@ -3,19 +3,7 @@ class CepTracker
   EVENTS = {
     start: {
       requires_a_reason: false,
-      allowed_next: [:finish, :stop, :block]
-    },
-    finish: {
-      requires_a_reason: false,
-      allowed_next: [:reject]
-    },
-    resume: {
-      requires_a_reason: false,
-      allowed_next: [:finish, :stop, :block]
-    },
-    restart: {
-      requires_a_reason: false,
-      allowed_next: [:finish, :stop, :block]
+      allowed_next: [:accept, :block, :finish, :stop]
     },
     stop: {
       requires_a_reason: true,
@@ -25,9 +13,25 @@ class CepTracker
       requires_a_reason: true,
       allowed_next: [:resume]
     },
+    resume: {
+      requires_a_reason: false,
+      allowed_next: [:accept, :block, :finish, :stop]
+    },
+    accept: {
+      requires_a_reason: false,
+      allowed_next: [:finish, :reject]
+    },
+    finish: {
+      requires_a_reason: false,
+      allowed_next: []
+    },
     reject: {
       requires_a_reason: true,
       allowed_next: [:restart]
+    },
+    restart: {
+      requires_a_reason: false,
+      allowed_next: [:accept, :block, :finish, :stop]
     }
   }
 
@@ -249,21 +253,23 @@ class CepTracker
   def perform_ads_story_action
     if ads_story && options.tracker_id
       case options.event
-      when 'start'
-        set_ads_story_points
-        ads_story.start
-      when 'finish'
-        ads_story.finish
-      when 'stop'
-        ads_story.stop(reason: full_reason)
+      when 'accept'
+        ads_story.accept
       when 'block'
         ads_story.block(reason: full_reason)
-      when 'resume'
-        ads_story.resume
+      when 'finish'
+        ads_story.finish
       when 'reject'
         ads_story.reject(reason: full_reason)
       when 'restart'
         ads_story.restart
+      when 'resume'
+        ads_story.resume
+      when 'start'
+        set_ads_story_points
+        ads_story.start
+      when 'stop'
+        ads_story.stop(reason: full_reason)
       else
         ads_story.add_comment(options.comment) unless options.comment.nil?
       end

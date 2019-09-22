@@ -13,7 +13,8 @@ class AdsStory
   # states
   RESET = 'New'
   STARTED = 'Active'
-  FINISHED = 'Resolved'
+  ACCEPTED = 'Resolved'
+  FINISHED = 'Closed'
 
   attr_reader :id, :url, :area, :iteration, :state, :type, :title,
     :points, :column, :tags, :history, :description
@@ -53,6 +54,10 @@ class AdsStory
     start
     add_tag(REJECTED) unless rejected?
     add_comment(reason)
+  end
+
+  def accept
+    update({state: ACCEPTED}) unless state == ACCEPTED
   end
 
   def finish
