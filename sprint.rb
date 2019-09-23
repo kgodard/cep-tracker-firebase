@@ -128,7 +128,7 @@ private
         event['event'] == 'start' &&
           event['tracker_id'] == story.tracker_id
       end
-    end.flatten.count
+    end.flatten.map {|e| e['dev_name']}.uniq.count
   end
 
   def story_cycle_hours_sum
