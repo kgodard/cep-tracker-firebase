@@ -153,6 +153,30 @@ describe CepTracker do
       expect { subject }.to_not output(/Avg Team Velocity/).to_stdout
     end
 
+    context "with inclusion filter (-i flag) specified" do
+      let(:args) { ["-k", '2000-09-09', "-i", "iteration=Iteration2"] }
+
+      it "calculates finished points" do
+        expect { subject }.to output(/Finished Points:\s+2\.0/).to_stdout
+      end
+
+      it "displays number of contributors" do
+        expect { subject }.to output(/Number of Contributors:\s+1/).to_stdout
+      end
+
+      it "calculates avg points per dev" do
+        expect { subject }.to output(/Avg Points Per Dev:\s+2\.0/).to_stdout
+      end
+
+      it "calculates avg cycle hours" do
+        expect { subject }.to output(/Avg Cycle Hours:\s+72\.0/).to_stdout
+      end
+
+      it "calculates rejection rate" do
+        expect { subject }.to output(/Rejection \%:\s+0/).to_stdout
+      end
+    end
+
     context "with filter specified" do
       let(:args) { ["-k", '2000-09-09', "-x", "area=Area2"] }
 

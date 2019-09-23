@@ -78,6 +78,10 @@ class CepTracker
         options.search_id = search_id
       end
 
+      parser.on("-i", "--include_only INCLUSIONS", "filter sprint end results by inclusion filter (requires --sprint_end option), ex: 'area=foo'") do |inclusions|
+        options.inclusions = inclusions
+      end
+
       parser.on("-k", "--sprint_end DATE", "specify sprint_end date for 2-week sprint report, ex: '2016-04-12'") do |sprint_end|
         options.sprint_end = sprint_end
       end
@@ -216,6 +220,7 @@ class CepTracker
       sprint_end: options.sprint_end,
       firebase_event: firebase_event,
       filter: options.filter,
+      inclusions: options.inclusions,
       number_of_sprints: options.number_of_sprints
     )
     IncrementDisplay.new(increment: increment).render

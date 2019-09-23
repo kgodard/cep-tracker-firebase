@@ -2,12 +2,13 @@
 class Sprint
   attr_reader :sprint_end, :firebase_event, :sprint_events,
     :uniq_finished_events, :stories, :rejected_event_count,
-    :filters, :number_of_sprints, :dev_count
+    :filters, :number_of_sprints, :dev_count, :inclusions
 
-  def initialize(sprint_end:, firebase_event:, filter: nil, number_of_sprints: 1)
+  def initialize(sprint_end:, firebase_event:, filter: nil, inclusions: nil, number_of_sprints: 1)
     @sprint_end           = sprint_end
     @firebase_event       = firebase_event
     @filters              = parse_story_filters(filter)
+    @inclusions           = parse_story_filters(inclusions)
     @number_of_sprints    = number_of_sprints
     @sprint_events        = fetch_sprint_events
     @uniq_finished_events = get_uniq_finished_events
@@ -67,9 +68,21 @@ private
   end
 
   def filter_stories(unfiltered_stories)
-    unfiltered_stories.reject do |story|
+    filtered_stories = unfiltered_stories.reject do |story|
       filter_story?(story)
     end
+
+    filtered_stories.select do |story|
+      include_story?(story)
+    end
+  end
+
+  def include_story?(story)
+    return true if inclusions.empty?
+    inclusions.each do |inclusion|
+      return true if story.send(inclusion.first) == inclusion.last
+    end
+    false
   end
 
   def filter_story?(story)
