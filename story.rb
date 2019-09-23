@@ -58,7 +58,7 @@ private
   end
 
   def detect_event(event_name)
-    events.detect {|e| e['event'] == event_name && e['dev_name'] == developer}
+    events.detect {|e| e['event'] == event_name && e['tracker_id'] == tracker_id}
   end
 
   def blocked_seconds

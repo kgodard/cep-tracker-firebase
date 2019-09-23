@@ -82,7 +82,7 @@ describe CepTracker do
       },
       {
         "tracker_id" =>  fb_id_1,
-        "dev_name" =>    "Dev One",
+        "dev_name" =>    "Product Owner",
         "event" =>       "finish",
         "created_at" =>  (Time.now - 1 * day).to_i
       },
@@ -95,7 +95,7 @@ describe CepTracker do
       },
       {
         "tracker_id" =>  fb_id_2,
-        "dev_name" =>    "Dev Two",
+        "dev_name" =>    "Product Owner 2",
         "event" =>       "finish",
         "created_at" =>  (Time.now - 2 * day).to_i
       },

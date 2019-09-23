@@ -91,7 +91,7 @@ private
 
   def get_uniq_finished_events
     finished = sprint_events.select {|e| e['event'] == 'finish'}
-    finished.uniq {|e| e['tracker_id'].to_s + e['dev_name'] }
+    finished.uniq {|e| e['tracker_id']}
   end
 
   def fetch_sprint_events
@@ -123,7 +123,12 @@ private
   end
 
   def developer_count
-    stories.map(&:developer).uniq.count
+    stories.map do |story|
+      story.events.select do |event|
+        event['event'] == 'start' &&
+          event['tracker_id'] == story.tracker_id
+      end
+    end.flatten.count
   end
 
   def story_cycle_hours_sum
