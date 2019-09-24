@@ -110,6 +110,10 @@ class CepTracker
         set_tracker_id(tracker_id)
       end
 
+      parser.on("-w", "--wipe TRACKERID", "specify story id to wipe out all its events and reset its state to new") do |wipe_id|
+        options.wipe_id = wipe_id
+      end
+
       parser.on("-x", "--filter FILTER", "filter sprint end results by story attr (requires --sprint_end option), ex: 'area=DemGray'") do |filter|
         options.filter = filter
       end
@@ -130,7 +134,7 @@ class CepTracker
   end
 
   def no_other_options?
-    options.last.nil? && options.since.nil? && options.sprint_end.nil? && options.search_id.nil?
+    options.last.nil? && options.since.nil? && options.sprint_end.nil? && options.search_id.nil? && options.wipe_id.nil?
   end
 
   def no_comment?
@@ -156,8 +160,7 @@ class CepTracker
 
     while options.tracker_id.nil? && no_other_options?
       print "Please enter story id: "
-      tracker_id = STDIN.gets.chomp
-      tracker_id[0] = '' if tracker_id[0] == '#'
+      tracker_id = trim_tracker_id(STDIN.gets.chomp)
       if valid_integer?(tracker_id)
         set_tracker_id(tracker_id)
       end
@@ -248,11 +251,30 @@ class CepTracker
   end
 
   def perform_id_search
-    tracker_id = options.search_id
+    tracker_id = trim_tracker_id(options.search_id)
     title = "Events for story id: #{tracker_id}:"
-    tracker_id[0] = '' if tracker_id[0] == '#'
     set_tracker_id(tracker_id)
     EventDisplay.new(title: title, events: fb_events).render
+  end
+
+  def perform_event_wipe_and_reset
+    title = "WARNING: YOU ARE ABOUT TO DELETE ALL OF THE FOLLOWING EVENTS AND RESET THIS STORY TO NEW!"
+    tracker_id = trim_tracker_id(options.wipe_id)
+    set_tracker_id(tracker_id)
+    EventDisplay.new(title: title, events: fb_events).render
+    print "Are you sure you want to do this (y/n)? "
+    confirmation = STDIN.gets.chomp
+    if confirmation == 'y'
+      puts
+      puts "Deleting events..."
+      wipe_events_and_reset_story(tracker_id)
+      puts
+      puts "Done!"
+    else
+      puts
+      puts "Aborting."
+      puts
+    end
   end
 
   def perform_ads_story_action
@@ -324,6 +346,8 @@ class CepTracker
       perform_since
     elsif !options.search_id.nil?
       perform_id_search
+    elsif !options.wipe_id.nil?
+      perform_event_wipe_and_reset
     elsif !options.sprint_end.nil?
       perform_sprint_end
     elsif options.tracker_id && !options.comment.to_s.empty?
@@ -384,6 +408,25 @@ class CepTracker
   end
 
 private
+
+  def delete_event!(event_key)
+    firebase_event.delete(event_key: event_key)
+  rescue => e
+    abort(e.message)
+  end
+
+  def wipe_events_and_reset_story(tracker_id)
+    events = all_events_with_keys_for(tracker_id: tracker_id)
+    events.keys.each do |event_key|
+      delete_event!(event_key)
+    end
+    ads_story.reset
+  end
+
+  def trim_tracker_id(tracker_id)
+    tracker_id[0] = '' if tracker_id[0] == '#'
+    tracker_id
+  end
 
   def validate_event
     return if options.event.nil?
@@ -497,15 +540,28 @@ private
   end
 
   def all_events_for(tracker_id:)
-    params = {
-      orderBy: '"tracker_id"',
-      equalTo: "\"#{tracker_id}\""
-    }
+    params = all_events_search_params(tracker_id)
     fetch_fb_events(params)
+  end
+
+  def all_events_with_keys_for(tracker_id:)
+    params = all_events_search_params(tracker_id)
+    fetch_fb_events_with_keys(params)
   end
 
   def fetch_fb_events(params)
     firebase_event.search(params: params)
+  end
+
+  def fetch_fb_events_with_keys(params)
+    firebase_event.search(params: params, include_keys: true)
+  end
+
+  def all_events_search_params(tracker_id)
+    {
+      orderBy: '"tracker_id"',
+      equalTo: "\"#{tracker_id}\""
+    }
   end
 end
 

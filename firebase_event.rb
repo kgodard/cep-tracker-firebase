@@ -8,13 +8,17 @@ class FirebaseEvent
     @firebase = Firebase::Client.new(firebase_uri, firebase_secret)
   end
 
-  def search(params: {})
+  def search(params: {}, include_keys: false)
     puts "DEBUG: SEARCH #{params.inspect}" if DEBUG
     abort("Empty params! #{params}") if params.empty?
     path = rest_request(params)
     events = JSON.parse fb_search(path)
     return [] if events.nil?
-    events.values.sort_by {|e| e['created_at']}
+    if include_keys
+      events
+    else
+      events.values.sort_by {|e| e['created_at']}
+    end
   rescue => e
     abort("Error fetching events from firebase: #{e.message}")
   end
@@ -30,7 +34,16 @@ class FirebaseEvent
     fb_fetch_event(event_key)
   end
 
+  def delete(event_key:)
+    puts "DELETE: EVENT_KEY: #{event_key}" if DEBUG
+    fb_delete_event(event_key)
+  end
+
   private
+
+  def fb_delete_event(event_key)
+    suppress_output { firebase.delete("events/#{event_key}") }
+  end
 
   def fb_fetch_event(event_key)
     suppress_output { firebase.get("events/#{event_key}") }
