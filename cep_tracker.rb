@@ -170,6 +170,7 @@ class CepTracker
     validate_event
 
     while options.event.nil? && no_other_options? && no_comment? && no_open?
+      abort(finished_story_message) if last_fb_event == 'finish'
       puts
       puts "Event type required."
       puts
@@ -408,6 +409,12 @@ class CepTracker
   end
 
 private
+
+  def finished_story_message
+    "\nThis story is finished.\n\n(You can use "+
+      "the --wipe option to wipe all events and "+
+      "reset this story.)\n\n"
+  end
 
   def delete_event!(event_key)
     firebase_event.delete(event_key: event_key)
