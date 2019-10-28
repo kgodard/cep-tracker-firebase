@@ -1,9 +1,8 @@
 class CepTracker
-
   EVENTS = {
     start: {
       requires_a_reason: false,
-      allowed_next: [:accept, :block, :finish, :stop]
+      allowed_next: [:block, :finish, :qa_complete, :qa_ready, :stop]
     },
     stop: {
       requires_a_reason: true,
@@ -15,9 +14,13 @@ class CepTracker
     },
     resume: {
       requires_a_reason: false,
-      allowed_next: [:accept, :block, :finish, :stop]
+      allowed_next: [:block, :finish, :qa_complete, :qa_ready, :stop]
     },
-    accept: {
+    qa_ready: {
+      requires_a_reason: false,
+      allowed_next: [:qa_complete, :reject]
+    },
+    qa_complete: {
       requires_a_reason: false,
       allowed_next: [:finish, :reject]
     },
@@ -31,7 +34,7 @@ class CepTracker
     },
     restart: {
       requires_a_reason: false,
-      allowed_next: [:accept, :block, :finish, :stop]
+      allowed_next: [:block, :finish, :qa_complete, :qa_ready, :stop]
     }
   }
 
@@ -281,8 +284,10 @@ class CepTracker
   def perform_ads_story_action
     if ads_story && options.tracker_id
       case options.event
-      when 'accept'
-        ads_story.accept
+      when 'qa_ready'
+        ads_story.qa_ready
+      when 'qa_complete'
+        ads_story.qa_complete
       when 'block'
         ads_story.block(reason: full_reason)
       when 'finish'

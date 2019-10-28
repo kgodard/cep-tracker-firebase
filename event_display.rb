@@ -36,7 +36,7 @@ class EventDisplay
   def event_line(event)
     ary = [
       Time.at(event['created_at']).strftime("%a %b %e, %R"),
-      event['event'].ljust(8),
+      event['event'].ljust(11),
       '#' + event['tracker_id'].to_s.ljust(11)
     ]
     ary << point_display_for(event) if with_points

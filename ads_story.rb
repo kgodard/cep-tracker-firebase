@@ -10,6 +10,9 @@ class AdsStory
   STOPPED = 'Stopped'
   BLOCKED = 'Blocked'
   REJECTED = 'Rejected'
+  QA_READY = 'QA ready'
+  QA_COMPLETE = 'QA complete'
+  DEMO_ACCEPTED = 'Demo accepted'
   # states
   RESET = 'New'
   STARTED = 'Active'
@@ -47,20 +50,33 @@ class AdsStory
   end
 
   def reset
+    remove_tag(QA_READY)
+    remove_tag(QA_COMPLETE)
+    remove_tag(DEMO_ACCEPTED)
     update({state: RESET}) unless state == RESET
   end
 
   def reject(reason: '')
     start
+    remove_tag(QA_READY)
+    remove_tag(QA_COMPLETE)
     add_tag(REJECTED) unless rejected?
     add_comment(reason)
   end
 
-  def accept
+  def qa_ready
+    add_tag(QA_READY) unless qa_ready?
+    update({state: STARTED}) unless state == STARTED
+  end
+
+  def qa_complete
+    remove_tag(QA_READY)
+    add_tag(QA_COMPLETE) unless qa_complete?
     update({state: ACCEPTED}) unless state == ACCEPTED
   end
 
   def finish
+    add_tag(DEMO_ACCEPTED) unless demo_accepted?
     update({state: FINISHED}) unless state == FINISHED
   end
 
@@ -77,6 +93,18 @@ class AdsStory
   def resume
     remove_tag(BLOCKED) if blocked?
     remove_tag(STOPPED) if stopped?
+  end
+
+  def demo_accepted?
+    has_tag?(DEMO_ACCEPTED)
+  end
+
+  def qa_complete?
+    has_tag?(QA_COMPLETE)
+  end
+
+  def qa_ready?
+    has_tag?(QA_READY)
   end
 
   def rejected?

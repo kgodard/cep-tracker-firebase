@@ -412,7 +412,8 @@ describe CepTracker do
       let(:prompt_number) { 2 }
 
       describe "allowed events" do
-        it_behaves_like "allowed", "accept"
+        it_behaves_like "allowed", "qa_ready"
+        it_behaves_like "allowed", "qa_complete"
         it_behaves_like "allowed", "block"
         it_behaves_like "allowed", "finish"
         it_behaves_like "allowed", "stop"
@@ -426,8 +427,27 @@ describe CepTracker do
       end
     end
 
-    context "after 'accept'" do
-      let(:fb_event_name) { 'accept' }
+    context "after 'qa_ready'" do
+      let(:fb_event_name) { 'qa_ready' }
+      let(:prompt_number) { 6 }
+
+      describe "allowed events" do
+        it_behaves_like "allowed", "qa_complete"
+        it_behaves_like "allowed", "reject"
+      end
+
+      describe "NOT allowed events" do
+        it_behaves_like "NOT allowed", "finish"
+        it_behaves_like "NOT allowed", "block"
+        it_behaves_like "NOT allowed", "restart"
+        it_behaves_like "NOT allowed", "resume"
+        it_behaves_like "NOT allowed", "start"
+        it_behaves_like "NOT allowed", "stop"
+      end
+    end
+
+    context "after 'qa_complete'" do
+      let(:fb_event_name) { 'qa_complete' }
       let(:prompt_number) { 7 }
 
       describe "allowed events" do
@@ -436,7 +456,7 @@ describe CepTracker do
       end
 
       describe "NOT allowed events" do
-        it_behaves_like "NOT allowed", "accept"
+        it_behaves_like "NOT allowed", "qa_ready"
         it_behaves_like "NOT allowed", "block"
         it_behaves_like "NOT allowed", "restart"
         it_behaves_like "NOT allowed", "resume"
@@ -450,7 +470,8 @@ describe CepTracker do
       let(:prompt_number) { 2 }
 
       describe "allowed events" do
-        it_behaves_like "allowed", "accept"
+        it_behaves_like "allowed", "qa_ready"
+        it_behaves_like "allowed", "qa_complete"
         it_behaves_like "allowed", "block"
         it_behaves_like "allowed", "finish"
         it_behaves_like "allowed", "stop"
@@ -469,7 +490,8 @@ describe CepTracker do
       let(:prompt_number) { 2 }
 
       describe "allowed events" do
-        it_behaves_like "allowed", "accept"
+        it_behaves_like "allowed", "qa_ready"
+        it_behaves_like "allowed", "qa_complete"
         it_behaves_like "allowed", "block"
         it_behaves_like "allowed", "finish"
         it_behaves_like "allowed", "stop"
@@ -492,7 +514,8 @@ describe CepTracker do
       end
 
       describe "NOT allowed events" do
-        it_behaves_like "NOT allowed", "accept"
+        it_behaves_like "NOT allowed", "qa_ready"
+        it_behaves_like "NOT allowed", "qa_complete"
         it_behaves_like "NOT allowed", "block"
         it_behaves_like "NOT allowed", "finish"
         it_behaves_like "NOT allowed", "reject"
@@ -511,7 +534,8 @@ describe CepTracker do
       end
 
       describe "NOT allowed events" do
-        it_behaves_like "NOT allowed", "accept"
+        it_behaves_like "NOT allowed", "qa_ready"
+        it_behaves_like "NOT allowed", "qa_complete"
         it_behaves_like "NOT allowed", "block"
         it_behaves_like "NOT allowed", "finish"
         it_behaves_like "NOT allowed", "reject"
@@ -523,14 +547,15 @@ describe CepTracker do
 
     context "after 'reject'" do
       let(:fb_event_name) { 'reject' }
-      let(:prompt_number) { 8 }
+      let(:prompt_number) { 9 }
 
       describe "allowed events" do
         it_behaves_like "allowed", "restart"
       end
 
       describe "NOT allowed events" do
-        it_behaves_like "NOT allowed", "accept"
+        it_behaves_like "NOT allowed", "qa_ready"
+        it_behaves_like "NOT allowed", "qa_complete"
         it_behaves_like "NOT allowed", "block"
         it_behaves_like "NOT allowed", "finish"
         it_behaves_like "NOT allowed", "reject"
