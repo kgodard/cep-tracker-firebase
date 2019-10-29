@@ -130,11 +130,11 @@ describe CepTracker do
     end
 
     it "displays number of contributors" do
-      expect { subject }.to output(/Number of Contributors:\s+2/).to_stdout
+      expect { subject }.to output(/Number of Contributors:\s+3/).to_stdout
     end
 
     it "calculates avg points per dev" do
-      expect { subject }.to output(/Avg Points Per Dev:\s+1\.5/).to_stdout
+      expect { subject }.to output(/Avg Points Per Dev:\s+1/).to_stdout
     end
 
     it "calculates avg cycle hours" do
@@ -161,11 +161,11 @@ describe CepTracker do
       end
 
       it "displays number of contributors" do
-        expect { subject }.to output(/Number of Contributors:\s+1/).to_stdout
+        expect { subject }.to output(/Number of Contributors:\s+2/).to_stdout
       end
 
       it "calculates avg points per dev" do
-        expect { subject }.to output(/Avg Points Per Dev:\s+2\.0/).to_stdout
+        expect { subject }.to output(/Avg Points Per Dev:\s+1\.0/).to_stdout
       end
 
       it "calculates avg cycle hours" do
@@ -185,11 +185,11 @@ describe CepTracker do
       end
 
       it "displays number of contributors" do
-        expect { subject }.to output(/Number of Contributors:\s+1/).to_stdout
+        expect { subject }.to output(/Number of Contributors:\s+2/).to_stdout
       end
 
       it "calculates avg points per dev" do
-        expect { subject }.to output(/Avg Points Per Dev:\s+1\.0/).to_stdout
+        expect { subject }.to output(/Avg Points Per Dev:\s+0\.5/).to_stdout
       end
 
       it "calculates avg cycle hours" do
@@ -219,11 +219,11 @@ describe CepTracker do
       end
 
       it "displays number of contributors" do
-        expect { subject }.to output(/Number of Contributors:\s+2/).to_stdout
+        expect { subject }.to output(/Number of Contributors:\s+3/).to_stdout
       end
 
       it "calculates avg points per dev" do
-        expect { subject }.to output(/Avg Points Per Dev:\s+0\.5/).to_stdout
+        expect { subject }.to output(/Avg Points Per Dev:\s+0\.3/).to_stdout
       end
 
       it "calculates avg cycle hours" do

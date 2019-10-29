@@ -1,5 +1,8 @@
 # contains all finished stories for a given sprint
 class Sprint
+  # adds any non-dev personnel to the contributor calc (i.e. QA)
+  NON_DEV_COUNT = ENV["NON_DEV_COUNT"] ? ENV["NON_DEV_COUNT"].to_i : 1
+
   attr_reader :sprint_end, :firebase_event, :sprint_events,
     :uniq_finished_events, :stories, :rejected_event_count,
     :filters, :number_of_sprints, :dev_count, :inclusions
@@ -141,7 +144,7 @@ private
         event['event'] == 'start' &&
           event['tracker_id'] == story.tracker_id
       end
-    end.flatten.map {|e| e['dev_name']}.uniq.count
+    end.flatten.map {|e| e['dev_name']}.uniq.count + NON_DEV_COUNT
   end
 
   def story_cycle_hours_sum
