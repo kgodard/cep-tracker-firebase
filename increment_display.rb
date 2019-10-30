@@ -19,7 +19,7 @@ class IncrementDisplay
     puts "Finished Points:        #{increment.finished_points}"
     sprints_line
     team_velocity_line
-    puts "Number of Contributors: #{increment.dev_count}"
+    puts "Contributing Devs:      #{increment.dev_count}"
     puts "Avg Points Per Dev:     #{increment.average_points_per_developer}"
     puts "Avg Cycle Hours:        #{increment.average_cycle_hours} (#{increment.average_cycle_days} days)"
     puts "Rejection %:            #{increment.rejection_percent}"
