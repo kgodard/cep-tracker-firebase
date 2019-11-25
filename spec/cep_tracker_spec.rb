@@ -130,7 +130,7 @@ describe CepTracker do
     end
 
     it "displays number of contributors" do
-      expect { subject }.to output(/Number of Contributors:\s+2/).to_stdout
+      expect { subject }.to output(/Contributing Devs:\s+2/).to_stdout
     end
 
     it "calculates avg points per dev" do
@@ -161,7 +161,7 @@ describe CepTracker do
       end
 
       it "displays number of contributors" do
-        expect { subject }.to output(/Number of Contributors:\s+1/).to_stdout
+        expect { subject }.to output(/Contributing Devs:\s+1/).to_stdout
       end
 
       it "calculates avg points per dev" do
@@ -185,7 +185,7 @@ describe CepTracker do
       end
 
       it "displays number of contributors" do
-        expect { subject }.to output(/Number of Contributors:\s+1/).to_stdout
+        expect { subject }.to output(/Contributing Devs:\s+1/).to_stdout
       end
 
       it "calculates avg points per dev" do
@@ -219,7 +219,7 @@ describe CepTracker do
       end
 
       it "displays number of contributors" do
-        expect { subject }.to output(/Number of Contributors:\s+2/).to_stdout
+        expect { subject }.to output(/Contributing Devs:\s+2/).to_stdout
       end
 
       it "calculates avg points per dev" do
