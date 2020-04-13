@@ -6,6 +6,9 @@ require 'byebug'
 
 class AdsStory
 
+  DEFAULT_TARGETED_PROJECT = 'Backlog'
+  BUG_TYPE = 'Bug'
+
   # tags
   STOPPED = 'Stopped'
   BLOCKED = 'Blocked'
@@ -20,7 +23,7 @@ class AdsStory
   FINISHED = 'Closed'
 
   attr_reader :id, :url, :area, :iteration, :state, :type, :title,
-    :points, :column, :tags, :history, :description
+    :points, :column, :tags, :history, :description, :targeted_project
 
   def initialize(id:)
     @id = id
@@ -159,6 +162,7 @@ class AdsStory
   end
 
   def update(args = {})
+    set_targeted_project_if_needed
     az_update(args)
     fetch_and_load
   end
@@ -168,7 +172,27 @@ class AdsStory
     return true
   end
 
+  def bug?
+    type == BUG_TYPE
+  end
+
 private
+
+  def set_targeted_project_if_needed
+    set_default_targeted_project if should_set_targeted_project?
+  end
+
+  def should_set_targeted_project?
+    bug? && has_no_targeted_project?
+  end
+
+  def has_no_targeted_project?
+    targeted_project.strip.empty?
+  end
+
+  def set_default_targeted_project
+    update_fields({"Custom.TargetedProject" => DEFAULT_TARGETED_PROJECT})
+  end
 
   def fetch_and_load
     load_story(az_fetch)
@@ -182,17 +206,18 @@ private
     if az_story.empty?
       raise "ADS story #{id} was not found!"
     else
-      @url         = az_story["url"] || ""
-      @area        = az_story["fields"]["System.AreaLevel3"] || ""
-      @iteration   = az_story["fields"]["System.IterationLevel3"] || ""
-      @state       = az_story["fields"]["System.State"] || ""
-      @type        = az_story["fields"]["System.WorkItemType"] || ""
-      @title       = az_story["fields"]["System.Title"] || ""
-      @points      = az_story["fields"]["Microsoft.VSTS.Scheduling.StoryPoints"] || ""
-      @column      = az_story["fields"]["System.BoardColumn"] || ""
-      @tags        = az_story["fields"]["System.Tags"] || ""
-      @history     = az_story["fields"]["System.History"] || ""
-      @description = az_story["fields"]["System.Description"] || ""
+      @url              = az_story["url"] || ""
+      @area             = az_story["fields"]["System.AreaLevel3"] || ""
+      @iteration        = az_story["fields"]["System.IterationLevel3"] || ""
+      @state            = az_story["fields"]["System.State"] || ""
+      @type             = az_story["fields"]["System.WorkItemType"] || ""
+      @title            = az_story["fields"]["System.Title"] || ""
+      @points           = az_story["fields"]["Microsoft.VSTS.Scheduling.StoryPoints"] || ""
+      @column           = az_story["fields"]["System.BoardColumn"] || ""
+      @tags             = az_story["fields"]["System.Tags"] || ""
+      @history          = az_story["fields"]["System.History"] || ""
+      @description      = az_story["fields"]["System.Description"] || ""
+      @targeted_project = az_story["fields"]["Custom.TargetedProject"] || ""
       return true
     end
   end
