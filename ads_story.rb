@@ -10,6 +10,7 @@ class AdsStory
   BUG_TYPE = 'Bug'
 
   # tags
+  DEMO_MINS_PREFIX = 'demo-mins:'
   STOPPED = 'Stopped'
   BLOCKED = 'Blocked'
   REJECTED = 'Rejected'
@@ -56,6 +57,7 @@ class AdsStory
     remove_tag(QA_READY)
     remove_tag(QA_COMPLETE)
     remove_tag(DEMO_ACCEPTED)
+    remove_demo_mins_tag
     update({state: RESET}) unless state == RESET
   end
 
@@ -63,6 +65,7 @@ class AdsStory
     start
     remove_tag(QA_READY)
     remove_tag(QA_COMPLETE)
+    remove_demo_mins_tag
     add_tag(REJECTED) unless rejected?
     add_comment(reason)
   end
@@ -72,10 +75,16 @@ class AdsStory
     update({state: STARTED}) unless state == STARTED
   end
 
-  def qa_complete
+  def qa_complete(demo_mins:)
     remove_tag(QA_READY)
     add_tag(QA_COMPLETE) unless qa_complete?
+    add_demo_mins_tag(demo_mins)
     update({state: ACCEPTED}) unless state == ACCEPTED
+  end
+
+  def add_demo_mins_tag(mins = 0)
+    demo_mins_tag = "#{DEMO_MINS_PREFIX}#{mins}"
+    add_tag(demo_mins_tag) unless has_tag?(demo_mins_tag)
   end
 
   def finish
@@ -141,6 +150,11 @@ class AdsStory
   def add_tag(tag)
     fields = {tags: append_tag(tag)}
     update_fields(fields)
+  end
+
+  def remove_demo_mins_tag
+    patt = DEMO_MINS_PREFIX + '\d+'
+    remove_tag(patt)
   end
 
   def remove_tag(tag)

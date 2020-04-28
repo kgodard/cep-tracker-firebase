@@ -197,6 +197,14 @@ class CepTracker
       end
     end
 
+    while options.event == 'qa_complete' && options.demo_mins.nil?
+      print "Please estimate the number of minutes you'll need to demo this: "
+      demo_mins = STDIN.gets.chomp
+      if valid_integer?(demo_mins)
+        options.demo_mins = demo_mins
+      end
+    end
+
     if requires_a_reason && options.reason.nil?
       puts
       puts "Event requires a reason."
@@ -287,7 +295,7 @@ class CepTracker
       when 'qa_ready'
         ads_story.qa_ready
       when 'qa_complete'
-        ads_story.qa_complete
+        ads_story.qa_complete(demo_mins: options.demo_mins)
       when 'block'
         ads_story.block(reason: full_reason)
       when 'finish'

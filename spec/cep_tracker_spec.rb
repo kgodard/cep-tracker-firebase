@@ -444,6 +444,14 @@ describe CepTracker do
         it_behaves_like "NOT allowed", "start"
         it_behaves_like "NOT allowed", "stop"
       end
+
+      describe "additional prompt" do
+        let(:event_name) { 'qa_complete' }
+
+        it "prompts for demo minutes" do
+          expect { subject }.to output(/estimate the number of minutes/).to_stdout
+        end
+      end
     end
 
     context "after 'qa_complete'" do
